@@ -67,8 +67,9 @@ class _ExamScreenState extends State<ExamScreen> {
           MultiSplitView(
             controller: _hSplit,
             axis: Axis.horizontal,
-            dividerBuilder: (axis, index, resizable, dragging, highlighted, themeData) =>
-                _PanelDivider(axis: axis, dragging: dragging),
+            dividerBuilder:
+                (axis, index, resizable, dragging, highlighted, themeData) =>
+                    _PanelDivider(axis: axis, dragging: dragging),
             builder: (context, area) {
               if (area.id == 'question') {
                 return const QuestionPanel();
@@ -77,7 +78,8 @@ class _ExamScreenState extends State<ExamScreen> {
               return MultiSplitView(
                 controller: _vSplit,
                 axis: Axis.vertical,
-                dividerBuilder: (axis, index, resizable, dragging, highlighted, themeData) =>
+                dividerBuilder: (axis, index, resizable, dragging, highlighted,
+                        themeData) =>
                     _PanelDivider(axis: axis, dragging: dragging),
                 builder: (context, area) {
                   if (area.id == 'editor') {
@@ -200,7 +202,8 @@ class _BottomControlsState extends State<_BottomControls> {
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF181825) : Colors.white,
         border: Border(
-          top: BorderSide(color: theme.colorScheme.onSurface.withValues(alpha: 0.1)),
+          top: BorderSide(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.1)),
         ),
       ),
       child: Row(
@@ -224,8 +227,10 @@ class _BottomControlsState extends State<_BottomControls> {
                   hintText: 'Optional input for your program…',
                   hintStyle: TextStyle(
                       fontSize: 12,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.3)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      color:
+                          theme.colorScheme.onSurface.withValues(alpha: 0.3)),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   isDense: true,
                 ),
                 onChanged: exam.setStdin,
@@ -243,7 +248,8 @@ class _BottomControlsState extends State<_BottomControls> {
                   ? const SizedBox(
                       width: 14,
                       height: 14,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 1.5))
+                      child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 1.5))
                   : const Icon(Icons.play_arrow_rounded, size: 18),
               label: Text(isRunning ? 'Running…' : 'Run',
                   style: const TextStyle(fontWeight: FontWeight.w600)),
@@ -265,9 +271,12 @@ class _BottomControlsState extends State<_BottomControls> {
                   ? const SizedBox(
                       width: 14,
                       height: 14,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 1.5))
+                      child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 1.5))
                   : Icon(
-                      exam.submitted ? Icons.cloud_done_rounded : Icons.upload_rounded,
+                      exam.submitted
+                          ? Icons.cloud_done_rounded
+                          : Icons.upload_rounded,
                       size: 18),
               label: Text(
                 isSubmitting
@@ -278,8 +287,9 @@ class _BottomControlsState extends State<_BottomControls> {
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    exam.submitted ? const Color(0xFF0D9488) : const Color(0xFF3B82F6),
+                backgroundColor: exam.submitted
+                    ? const Color(0xFF0D9488)
+                    : const Color(0xFF3B82F6),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 18),
               ),
@@ -309,7 +319,10 @@ class _SubmittedOverlay extends StatelessWidget {
               color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(20),
               boxShadow: const [
-                BoxShadow(color: Colors.black26, blurRadius: 40, offset: Offset(0, 12))
+                BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 40,
+                    offset: Offset(0, 12))
               ],
             ),
             child: Column(
@@ -320,7 +333,8 @@ class _SubmittedOverlay extends StatelessWidget {
                 const SizedBox(height: 16),
                 Text('Code Submitted!',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w700, color: const Color(0xFF10B981))),
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF10B981))),
                 const SizedBox(height: 8),
                 Text(
                   'Your final submission has been recorded.\nYou may continue editing or close the exam.',
