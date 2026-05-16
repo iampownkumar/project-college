@@ -190,14 +190,13 @@ class ExamProvider extends ChangeNotifier {
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (_remaining.inSeconds <= 0) {
         _countdownTimer?.cancel();
-        _timerWarning = TimerWarning.expired;
+        _remaining = Duration.zero;
+        _autoSubmitOnExpiry('auto_timer');
+      } else {
+        _remaining = _remaining - const Duration(seconds: 1);
+        _updateTimerWarning();
         notifyListeners();
-        _autoSubmitOnExpiry();
-        return;
       }
-      _remaining = _remaining - const Duration(seconds: 1);
-      _updateTimerWarning();
-      notifyListeners();
     });
   }
 
@@ -213,7 +212,7 @@ class ExamProvider extends ChangeNotifier {
   }
 
   /// Auto-submit when timer expires — standard college exam behaviour.
-  Future<void> _autoSubmitOnExpiry() async {
+  Future<void> _autoSubmitOnExpiry(String type) async {
     if (_status == ExamStatus.submitting) return;
     _error = '';
     _status = ExamStatus.submitting;
@@ -228,6 +227,7 @@ class ExamProvider extends ChangeNotifier {
         'stderr': _lastResult?.stderr,
         'exit_code': _lastResult?.exitCode,
         'submitted_at': DateTime.now().toUtc().toIso8601String(),
+        'submission_type': type,
       });
       _submitted = true;
       _showSubmittedOverlay = true;
@@ -249,7 +249,7 @@ class ExamProvider extends ChangeNotifier {
     if (_focusLostCount >= _maxFocusLossStrikes) {
       _focusLocked = true;
       _countdownTimer?.cancel(); // stop timer
-      _autoSubmitOnExpiry();    // force submit immediately
+      _autoSubmitOnExpiry('auto_tab_switch');    // force submit immediately
     }
   }
 
@@ -442,6 +442,7 @@ class ExamProvider extends ChangeNotifier {
         'stderr': _lastResult?.stderr,
         'exit_code': _lastResult?.exitCode,
         'submitted_at': DateTime.now().toUtc().toIso8601String(),
+        'submission_type': 'normal',
       });
 
       _submitted = true;

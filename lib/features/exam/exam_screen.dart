@@ -113,9 +113,9 @@ class _ExamScreenState extends State<ExamScreen> with WidgetsBindingObserver {
                   MultiSplitView(
                     controller: _hSplit,
                     axis: Axis.horizontal,
-                    dividerBuilder:
-                        (axis, index, resizable, dragging, highlighted, themeData) =>
-                            _PanelDivider(axis: axis, dragging: dragging),
+                    dividerBuilder: (axis, index, resizable, dragging,
+                            highlighted, themeData) =>
+                        _PanelDivider(axis: axis, dragging: dragging),
                     builder: (context, area) {
                       if (area.id == 'question') {
                         return const QuestionPanel();
@@ -131,7 +131,8 @@ class _ExamScreenState extends State<ExamScreen> with WidgetsBindingObserver {
                             return exam.question != null
                                 ? CodeEditorWidget(
                                     key: ValueKey(exam.question!.id),
-                                    initialCode: exam.question!.starterCode ?? '',
+                                    initialCode:
+                                        exam.question!.starterCode ?? '',
                                   )
                                 : const Center(
                                     child: CircularProgressIndicator());
@@ -299,11 +300,16 @@ class _BottomControlsState extends State<_BottomControls> {
                       height: 14,
                       child: CircularProgressIndicator(
                           color: Colors.white, strokeWidth: 1.5))
-                  : Icon(isLocked ? Icons.lock_rounded : Icons.play_arrow_rounded, size: 18),
-              label: Text(isRunning ? 'Running…' : (isLocked ? 'Locked' : 'Run'),
+                  : Icon(
+                      isLocked ? Icons.lock_rounded : Icons.play_arrow_rounded,
+                      size: 18),
+              label: Text(
+                  isRunning ? 'Running…' : (isLocked ? 'Locked' : 'Run'),
                   style: const TextStyle(fontWeight: FontWeight.w600)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: isLocked ? const Color(0xFF6B7280) : const Color(0xFF10B981),
+                backgroundColor: isLocked
+                    ? const Color(0xFF6B7280)
+                    : const Color(0xFF10B981),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 18),
               ),
@@ -315,7 +321,9 @@ class _BottomControlsState extends State<_BottomControls> {
           SizedBox(
             height: 36,
             child: ElevatedButton.icon(
-              onPressed: (isSubmitting || isLocked) ? null : () => _confirmSubmit(exam),
+              onPressed: (isSubmitting || isLocked)
+                  ? null
+                  : () => _confirmSubmit(exam),
               icon: isSubmitting
                   ? const SizedBox(
                       width: 14,
@@ -417,7 +425,8 @@ class _SubmittedOverlay extends StatelessWidget {
                         // Navigate back to login — ExamProvider is
                         // re-created fresh on the next /exam visit.
                         Navigator.of(context).pushNamedAndRemoveUntil(
-                          '/', (route) => false,
+                          '/',
+                          (route) => false,
                         );
                       },
                       icon: const Icon(Icons.logout_rounded, size: 16),
