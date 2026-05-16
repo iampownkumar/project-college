@@ -12,7 +12,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:re_editor/re_editor.dart';
-import 'package:re_highlight/re_highlight.dart';
 import 'package:re_highlight/languages/python.dart';
 // re_highlight 0.0.3 themes are under lib/styles/ (not lib/themes/)
 import 'package:re_highlight/styles/atom-one-dark.dart';

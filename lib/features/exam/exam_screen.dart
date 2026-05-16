@@ -10,6 +10,7 @@
 // ============================================================
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:multi_split_view/multi_split_view.dart';
 import '../editor/code_editor_widget.dart';
@@ -17,6 +18,7 @@ import 'exam_provider.dart';
 import 'widgets/top_bar.dart';
 import 'widgets/question_panel.dart';
 import 'widgets/output_panel.dart';
+import 'widgets/timer_warning_banner.dart';
 
 class ExamScreen extends StatefulWidget {
   const ExamScreen({super.key});
@@ -25,15 +27,19 @@ class ExamScreen extends StatefulWidget {
   State<ExamScreen> createState() => _ExamScreenState();
 }
 
-class _ExamScreenState extends State<ExamScreen> {
+class _ExamScreenState extends State<ExamScreen> with WidgetsBindingObserver {
   // Horizontal split: [Question | Editor+Output]
   late MultiSplitViewController _hSplit;
   // Vertical split inside right side: [Editor | Output+Controls]
   late MultiSplitViewController _vSplit;
 
+  // Keyboard shortcut node
+  final FocusNode _keyboardFocus = FocusNode();
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _hSplit = MultiSplitViewController(areas: [
       Area(id: 'question', size: 300, min: 200),
       Area(id: 'right', min: 400),
@@ -45,11 +51,23 @@ class _ExamScreenState extends State<ExamScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ExamProvider>().initialize();
+      _keyboardFocus.requestFocus();
     });
+  }
+
+  /// Detect app going to background (alt-tab / minimise).
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused) {
+      context.read<ExamProvider>().recordFocusLoss();
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _keyboardFocus.dispose();
     _hSplit.dispose();
     _vSplit.dispose();
     super.dispose();
@@ -59,52 +77,69 @@ class _ExamScreenState extends State<ExamScreen> {
   Widget build(BuildContext context) {
     final exam = context.watch<ExamProvider>();
 
-    return Scaffold(
-      appBar: const ExamTopBar(),
-      body: Stack(
-        children: [
-          // Main resizable 3-panel workspace
-          MultiSplitView(
-            controller: _hSplit,
-            axis: Axis.horizontal,
-            dividerBuilder:
-                (axis, index, resizable, dragging, highlighted, themeData) =>
-                    _PanelDivider(axis: axis, dragging: dragging),
-            builder: (context, area) {
-              if (area.id == 'question') {
-                return const QuestionPanel();
-              }
-              // Right side: vertical split editor | output
-              return MultiSplitView(
-                controller: _vSplit,
-                axis: Axis.vertical,
-                dividerBuilder: (axis, index, resizable, dragging, highlighted,
-                        themeData) =>
-                    _PanelDivider(axis: axis, dragging: dragging),
-                builder: (context, area) {
-                  if (area.id == 'editor') {
-                    return exam.question != null
-                        ? CodeEditorWidget(
-                            key: ValueKey(exam.question!.id),
-                            initialCode: exam.question!.starterCode ?? '',
-                          )
-                        : const Center(child: CircularProgressIndicator());
-                  }
-                  // Output + stdin + controls
-                  return Column(
-                    children: [
-                      const Expanded(child: OutputPanel()),
-                      _BottomControls(),
-                    ],
-                  );
-                },
-              );
-            },
-          ),
-
-          // Submitted overlay
-          if (exam.showSubmittedOverlay) const _SubmittedOverlay(),
-        ],
+    return KeyboardListener(
+      focusNode: _keyboardFocus,
+      onKeyEvent: (event) {
+        // Ctrl+Enter → Run
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.enter &&
+            HardwareKeyboard.instance.isControlPressed) {
+          if (exam.status == ExamStatus.ready) exam.runCode();
+        }
+      },
+      child: Scaffold(
+        appBar: const ExamTopBar(),
+        body: Column(
+          children: [
+            // Timer warning banner (shown when <= 30 min remaining)
+            const TimerWarningBanner(),
+            // Main workspace
+            Expanded(
+              child: Stack(
+                children: [
+                  MultiSplitView(
+                    controller: _hSplit,
+                    axis: Axis.horizontal,
+                    dividerBuilder:
+                        (axis, index, resizable, dragging, highlighted, themeData) =>
+                            _PanelDivider(axis: axis, dragging: dragging),
+                    builder: (context, area) {
+                      if (area.id == 'question') {
+                        return const QuestionPanel();
+                      }
+                      return MultiSplitView(
+                        controller: _vSplit,
+                        axis: Axis.vertical,
+                        dividerBuilder: (axis, index, resizable, dragging,
+                                highlighted, themeData) =>
+                            _PanelDivider(axis: axis, dragging: dragging),
+                        builder: (context, area) {
+                          if (area.id == 'editor') {
+                            return exam.question != null
+                                ? CodeEditorWidget(
+                                    key: ValueKey(exam.question!.id),
+                                    initialCode: exam.question!.starterCode ?? '',
+                                  )
+                                : const Center(
+                                    child: CircularProgressIndicator());
+                          }
+                          return Column(
+                            children: [
+                              const Expanded(child: OutputPanel()),
+                              _BottomControls(),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                  ),
+                  // Submitted overlay
+                  if (exam.showSubmittedOverlay) const _SubmittedOverlay(),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

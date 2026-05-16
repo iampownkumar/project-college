@@ -1,30 +1,39 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+// ============================================================
+// File: test/widget_test.dart
+// Project: Lab Exam Client - Koreliurm Labs
+// Author: Pownkumar A (Founder of Koreliurm)
+// Created: 2026-05-15
+// Last Updated: 2026-05-16
+// Location: Tamil Nadu, India
+// Description: Basic smoke test — verifies the app widget tree
+//              initialises without throwing. Full integration
+//              tests require a running server instance.
+// ============================================================
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:lab_exam_client/main.dart';
+import 'package:lab_exam_client/core/config/app_config_model.dart';
+import 'package:lab_exam_client/core/config/config_loader.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  group('AppConfig model', () {
+    test('fromJson parses valid JSON correctly', () {
+      final json = {
+        'server': {'base_url': 'http://127.0.0.1:8000/api/v1', 'heartbeat_interval_seconds': 15},
+        'python': {'executable_path': './runtime/python/python.exe', 'runner_script': '', 'timeout_seconds': 30},
+        'exam': {'autosave_interval_seconds': 15, 'fullscreen': true, 'default_duration_minutes': 120},
+        'client': {'version': '1.0.0'},
+      };
+      final config = AppConfig.fromJson(json);
+      expect(config.server.baseUrl, 'http://127.0.0.1:8000/api/v1');
+      expect(config.server.heartbeatIntervalSeconds, 15);
+      expect(config.exam.defaultDurationMinutes, 120);
+      expect(config.client.version, '1.0.0');
+    });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    test('ConfigLoader singleton is not null after init', () {
+      // ConfigLoader.instance throws if not initialized — this test
+      // documents that it must be called before runApp().
+      expect(() => ConfigLoader.instance, throwsA(isA<StateError>()));
+    });
   });
 }

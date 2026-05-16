@@ -60,7 +60,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final isDark = context.watch<ThemeProvider>().isDark;
 
     return Scaffold(

@@ -24,6 +24,9 @@ import '../../core/utils/machine_info.dart';
 
 enum ExamStatus { loading, ready, running, submitting, submitted, error }
 
+/// Timer warning levels shown as top banners.
+enum TimerWarning { none, thirtyMin, tenMin, fiveMin, expired }
+
 class ExamProvider extends ChangeNotifier {
   final ApiService _api;
   final PythonRunnerService _runner;
@@ -76,6 +79,15 @@ class ExamProvider extends ChangeNotifier {
   bool get submitted => _submitted;
   bool _showSubmittedOverlay = false;
   bool get showSubmittedOverlay => _showSubmittedOverlay;
+
+  // Timer warning level
+  TimerWarning _timerWarning = TimerWarning.none;
+  TimerWarning get timerWarning => _timerWarning;
+
+  // Focus-loss / tab-switch counter (anti-cheat)
+  int _focusLostCount = 0;
+  int get focusLostCount => _focusLostCount;
+
   Duration get remaining => _remaining;
   DateTime? get lastSavedAt => _lastSavedAt;
   String get stdinInput => _stdinInput;
@@ -136,12 +148,59 @@ class ExamProvider extends ChangeNotifier {
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (_remaining.inSeconds <= 0) {
         _countdownTimer?.cancel();
+        _timerWarning = TimerWarning.expired;
         notifyListeners();
+        _autoSubmitOnExpiry();
         return;
       }
       _remaining = _remaining - const Duration(seconds: 1);
+      _updateTimerWarning();
       notifyListeners();
     });
+  }
+
+  void _updateTimerWarning() {
+    final mins = _remaining.inMinutes;
+    if (mins <= 5 && _timerWarning != TimerWarning.fiveMin && _timerWarning != TimerWarning.expired) {
+      _timerWarning = TimerWarning.fiveMin;
+    } else if (mins <= 10 && mins > 5 && _timerWarning == TimerWarning.none || _timerWarning == TimerWarning.thirtyMin) {
+      _timerWarning = TimerWarning.tenMin;
+    } else if (mins <= 30 && mins > 10 && _timerWarning == TimerWarning.none) {
+      _timerWarning = TimerWarning.thirtyMin;
+    }
+  }
+
+  /// Auto-submit when timer expires — standard college exam behaviour.
+  Future<void> _autoSubmitOnExpiry() async {
+    if (_status == ExamStatus.submitting) return;
+    _error = '';
+    _status = ExamStatus.submitting;
+    notifyListeners();
+    try {
+      await _api.postSubmission({
+        'registration_number': student.registrationNumber,
+        'session_id': session.id,
+        'question_id': assignment.questionId,
+        'source_code': _currentCode,
+        'stdout': _lastResult?.stdout,
+        'stderr': _lastResult?.stderr,
+        'exit_code': _lastResult?.exitCode,
+        'submitted_at': DateTime.now().toUtc().toIso8601String(),
+      });
+      _submitted = true;
+      _showSubmittedOverlay = true;
+    } catch (_) {
+      // Even if server is unreachable, mark locally as expired.
+    } finally {
+      _status = ExamStatus.ready;
+      notifyListeners();
+    }
+  }
+
+  /// Called by UI when app loses focus (window minimised / user alt-tabs).
+  void recordFocusLoss() {
+    _focusLostCount++;
+    notifyListeners();
   }
 
   // ── Heartbeat ─────────────────────────────────────────────

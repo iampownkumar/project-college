@@ -60,7 +60,7 @@ class AppTheme {
       ),
       labelStyle: const TextStyle(color: Color(0xFF89B4FA)),
     ),
-    extensions: const [_ExamColors(
+    extensions: const [ExamColors(
       panelBg: Color(0xFF181825),
       editorBg: Color(0xFF1E1E2E),
       outputBg: Color(0xFF11111B),
@@ -113,7 +113,7 @@ class AppTheme {
       ),
       labelStyle: const TextStyle(color: Color(0xFF64748B)),
     ),
-    extensions: const [_ExamColors(
+    extensions: const [ExamColors(
       panelBg: Colors.white,
       editorBg: Color(0xFFFAFAFA),
       outputBg: Color(0xFFF1F5F9),
@@ -128,7 +128,7 @@ class AppTheme {
 
 /// Custom theme extension for exam-specific colors.
 @immutable
-class _ExamColors extends ThemeExtension<_ExamColors> {
+class ExamColors extends ThemeExtension<ExamColors> {
   final Color panelBg;
   final Color editorBg;
   final Color outputBg;
@@ -138,7 +138,7 @@ class _ExamColors extends ThemeExtension<_ExamColors> {
   final Color warning;
   final Color error;
 
-  const _ExamColors({
+  const ExamColors({
     required this.panelBg,
     required this.editorBg,
     required this.outputBg,
@@ -150,11 +150,11 @@ class _ExamColors extends ThemeExtension<_ExamColors> {
   });
 
   @override
-  _ExamColors copyWith({
+  ExamColors copyWith({
     Color? panelBg, Color? editorBg, Color? outputBg,
     Color? topBarBg, Color? divider,
     Color? success, Color? warning, Color? error,
-  }) => _ExamColors(
+  }) => ExamColors(
     panelBg: panelBg ?? this.panelBg,
     editorBg: editorBg ?? this.editorBg,
     outputBg: outputBg ?? this.outputBg,
@@ -166,11 +166,10 @@ class _ExamColors extends ThemeExtension<_ExamColors> {
   );
 
   @override
-  _ExamColors lerp(_ExamColors? other, double t) => this;
+  ExamColors lerp(ExamColors? other, double t) => this;
 
-  static _ExamColors of(BuildContext context) =>
-      Theme.of(context).extension<_ExamColors>()!;
+  static ExamColors of(BuildContext context) =>
+      Theme.of(context).extension<ExamColors>()!;
 }
 
-// Public alias
-typedef ExamColors = _ExamColors;
+
