@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:multi_split_view/multi_split_view.dart';
+import 'package:window_manager/window_manager.dart';
 import '../editor/code_editor_widget.dart';
 import 'exam_provider.dart';
 import 'widgets/top_bar.dart';
@@ -55,12 +56,16 @@ class _ExamScreenState extends State<ExamScreen> with WidgetsBindingObserver {
     });
   }
 
-  /// Detect app going to background (alt-tab / minimise).
+  /// Restore fullscreen if student minimizes window.
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused) {
       context.read<ExamProvider>().recordFocusLoss();
+    }
+    // Re-enforce fullscreen when returning to app
+    if (state == AppLifecycleState.resumed) {
+      windowManager.setFullScreen(true);
     }
   }
 
@@ -231,6 +236,7 @@ class _BottomControlsState extends State<_BottomControls> {
     final isDark = theme.brightness == Brightness.dark;
     final isRunning = exam.status == ExamStatus.running;
     final isSubmitting = exam.status == ExamStatus.submitting;
+    final isLocked = exam.focusLocked; // 3 strikes → locked
 
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
@@ -278,18 +284,18 @@ class _BottomControlsState extends State<_BottomControls> {
           SizedBox(
             height: 36,
             child: ElevatedButton.icon(
-              onPressed: isRunning ? null : exam.runCode,
+              onPressed: (isRunning || isLocked) ? null : exam.runCode,
               icon: isRunning
                   ? const SizedBox(
                       width: 14,
                       height: 14,
                       child: CircularProgressIndicator(
                           color: Colors.white, strokeWidth: 1.5))
-                  : const Icon(Icons.play_arrow_rounded, size: 18),
-              label: Text(isRunning ? 'Running…' : 'Run',
+                  : Icon(isLocked ? Icons.lock_rounded : Icons.play_arrow_rounded, size: 18),
+              label: Text(isRunning ? 'Running…' : (isLocked ? 'Locked' : 'Run'),
                   style: const TextStyle(fontWeight: FontWeight.w600)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF10B981),
+                backgroundColor: isLocked ? const Color(0xFF6B7280) : const Color(0xFF10B981),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 18),
               ),
@@ -301,7 +307,7 @@ class _BottomControlsState extends State<_BottomControls> {
           SizedBox(
             height: 36,
             child: ElevatedButton.icon(
-              onPressed: isSubmitting ? null : () => _confirmSubmit(exam),
+              onPressed: (isSubmitting || isLocked) ? null : () => _confirmSubmit(exam),
               icon: isSubmitting
                   ? const SizedBox(
                       width: 14,
@@ -309,22 +315,28 @@ class _BottomControlsState extends State<_BottomControls> {
                       child: CircularProgressIndicator(
                           color: Colors.white, strokeWidth: 1.5))
                   : Icon(
-                      exam.submitted
-                          ? Icons.cloud_done_rounded
-                          : Icons.upload_rounded,
+                      isLocked
+                          ? Icons.lock_rounded
+                          : exam.submitted
+                              ? Icons.cloud_done_rounded
+                              : Icons.upload_rounded,
                       size: 18),
               label: Text(
                 isSubmitting
                     ? 'Submitting…'
-                    : exam.submitted
-                        ? 'Re-submit'
-                        : 'Submit',
+                    : isLocked
+                        ? 'Locked'
+                        : exam.submitted
+                            ? 'Re-submit'
+                            : 'Submit',
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: exam.submitted
-                    ? const Color(0xFF0D9488)
-                    : const Color(0xFF3B82F6),
+                backgroundColor: isLocked
+                    ? const Color(0xFF6B7280)
+                    : exam.submitted
+                        ? const Color(0xFF0D9488)
+                        : const Color(0xFF3B82F6),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(horizontal: 18),
               ),

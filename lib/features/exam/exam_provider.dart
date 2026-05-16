@@ -88,6 +88,12 @@ class ExamProvider extends ChangeNotifier {
   int _focusLostCount = 0;
   int get focusLostCount => _focusLostCount;
 
+  // Whether exam is locked due to repeated focus loss
+  bool _focusLocked = false;
+  bool get focusLocked => _focusLocked;
+
+  static const int _maxFocusLossStrikes = 3;
+
   Duration get remaining => _remaining;
   DateTime? get lastSavedAt => _lastSavedAt;
   String get stdinInput => _stdinInput;
@@ -198,9 +204,17 @@ class ExamProvider extends ChangeNotifier {
   }
 
   /// Called by UI when app loses focus (window minimised / user alt-tabs).
+  /// After 3 strikes the exam is locked and auto-submitted.
   void recordFocusLoss() {
+    if (_focusLocked) return; // already locked
     _focusLostCount++;
     notifyListeners();
+
+    if (_focusLostCount >= _maxFocusLossStrikes) {
+      _focusLocked = true;
+      _countdownTimer?.cancel(); // stop timer
+      _autoSubmitOnExpiry();    // force submit immediately
+    }
   }
 
   // ── Heartbeat ─────────────────────────────────────────────
