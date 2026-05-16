@@ -27,6 +27,27 @@ enum ExamStatus { loading, ready, running, submitting, submitted, error }
 /// Timer warning levels shown as top banners.
 enum TimerWarning { none, thirtyMin, tenMin, fiveMin, expired }
 
+/// Result of running one test case.
+class TestCaseResult {
+  final int index;          // 0-based case index
+  final String input;       // stdin sent
+  final String expected;    // expected stdout
+  final String actual;      // actual stdout produced
+  final bool passed;        // trimmed comparison
+  final String stderr;
+  final int durationMs;
+
+  const TestCaseResult({
+    required this.index,
+    required this.input,
+    required this.expected,
+    required this.actual,
+    required this.passed,
+    required this.stderr,
+    required this.durationMs,
+  });
+}
+
 class ExamProvider extends ChangeNotifier {
   final ApiService _api;
   final PythonRunnerService _runner;
@@ -93,6 +114,12 @@ class ExamProvider extends ChangeNotifier {
   bool get focusLocked => _focusLocked;
 
   static const int _maxFocusLossStrikes = 3;
+
+  // Test case results (populated after runCode)
+  List<TestCaseResult> _testCaseResults = [];
+  List<TestCaseResult> get testCaseResults => List.unmodifiable(_testCaseResults);
+  bool _isTestingCases = false;
+  bool get isTestingCases => _isTestingCases;
 
   Duration get remaining => _remaining;
   DateTime? get lastSavedAt => _lastSavedAt;
@@ -280,6 +307,11 @@ class ExamProvider extends ChangeNotifier {
 
       // Post run log (fire & forget)
       _postRunLog(result, start);
+
+      // Auto-run test cases if the question has examples
+      if (_question != null && _question!.visibleExamples.isNotEmpty) {
+        runAllTestCases();
+      }
     } catch (e) {
       _lastResult = RunnerResult(
         stdout: '',
@@ -290,6 +322,56 @@ class ExamProvider extends ChangeNotifier {
       _status = ExamStatus.ready;
       notifyListeners();
     }
+  }
+
+  /// Run the current code against every visible_example as a test case.
+  /// Results are stored in [testCaseResults] for the output panel to display.
+  Future<void> runAllTestCases() async {
+    if (_question == null || _question!.visibleExamples.isEmpty) return;
+    if (_currentCode.isEmpty) return;
+
+    _isTestingCases = true;
+    _testCaseResults = [];
+    notifyListeners();
+
+    final examples = _question!.visibleExamples;
+    final results = <TestCaseResult>[];
+
+    for (int i = 0; i < examples.length; i++) {
+      final ex = examples[i];
+      final start = DateTime.now();
+      try {
+        final r = await _runner.run(
+          sourceCode: _currentCode,
+          stdin: ex.input.isEmpty ? null : ex.input,
+        );
+        final actual = r.stdout.trimRight();
+        final expected = ex.output.trimRight();
+        results.add(TestCaseResult(
+          index: i,
+          input: ex.input,
+          expected: expected,
+          actual: actual,
+          passed: actual == expected,
+          stderr: r.stderr,
+          durationMs: DateTime.now().difference(start).inMilliseconds,
+        ));
+      } catch (e) {
+        results.add(TestCaseResult(
+          index: i,
+          input: ex.input,
+          expected: ex.output.trimRight(),
+          actual: '',
+          passed: false,
+          stderr: e.toString(),
+          durationMs: DateTime.now().difference(start).inMilliseconds,
+        ));
+      }
+    }
+
+    _testCaseResults = results;
+    _isTestingCases = false;
+    notifyListeners();
   }
 
   void _postRunLog(RunnerResult result, DateTime start) {
