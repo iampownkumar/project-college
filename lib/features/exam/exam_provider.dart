@@ -77,16 +77,23 @@ class ExamProvider extends ChangeNotifier {
   RunnerResult? _lastResult;
   bool _serverOnline = true;
   bool _submitted = false;
+  bool _disposed = false; // guard to prevent use-after-dispose
 
   String _currentCode = '';
   String _stdinInput = '';
 
-  // Timer
-  late Duration _remaining;
+  // Timer — initialised eagerly to avoid LateInitializationError
+  Duration _remaining = Duration.zero;
   Timer? _countdownTimer;
 
   // Heartbeat
   Timer? _heartbeatTimer;
+
+  // Autosave timestamp update timer (stored so we can cancel it)
+  Timer? _autosaveTimer;
+
+  // Assignment refresh poll timer
+  Timer? _assignmentPollTimer;
 
   // Autosave state display
   DateTime? _lastSavedAt;
@@ -127,17 +134,18 @@ class ExamProvider extends ChangeNotifier {
 
   void setStdin(String v) {
     _stdinInput = v;
-    notifyListeners();
+    if (!_disposed) notifyListeners();
   }
 
   void updateCode(String code) {
+    if (_focusLocked) return; // locked exam — reject edits
     _currentCode = code;
   }
 
   // ── Init ──────────────────────────────────────────────────
   Future<void> initialize() async {
     _status = ExamStatus.loading;
-    notifyListeners();
+    if (!_disposed) notifyListeners();
 
     try {
       // Compute timer from session data or use default
@@ -152,11 +160,12 @@ class ExamProvider extends ChangeNotifier {
       _currentCode = savedCode ?? _question!.starterCode ?? '';
 
       _status = ExamStatus.ready;
-      notifyListeners();
+      if (!_disposed) notifyListeners();
 
       _startCountdown();
       _startHeartbeat();
       _startAutosave();
+      _startAssignmentPoll();
     } catch (e) {
       _status = ExamStatus.error;
       _error = e.toString();
@@ -244,6 +253,32 @@ class ExamProvider extends ChangeNotifier {
     }
   }
 
+  // ── Assignment Refresh Poll ──────────────────────────────
+  /// Every 20 s, re-fetch the assigned question. If the admin swapped
+  /// the question (different question_id) the exam reloads with the
+  /// new question and fresh starter code, resetting test results.
+  void _startAssignmentPoll() {
+    _assignmentPollTimer =
+        Timer.periodic(const Duration(seconds: 20), (_) async {
+      if (_disposed) return;
+      try {
+        final json =
+            await _api.fetchAssignedQuestion(student.registrationNumber);
+        final newQ = QuestionModel.fromJson(json);
+        if (_question == null || newQ.id != _question!.id) {
+          // New question assigned — reset state
+          _question = newQ;
+          _currentCode = newQ.starterCode ?? '';
+          _lastResult = null;
+          _testCaseResults = [];
+          _submitted = false;
+          _showSubmittedOverlay = false;
+          if (!_disposed) notifyListeners();
+        }
+      } catch (_) {/* ignore network errors */}
+    });
+  }
+
   // ── Heartbeat ─────────────────────────────────────────────
   void _startHeartbeat() {
     final interval = ConfigLoader.instance.server.heartbeatIntervalSeconds;
@@ -251,7 +286,8 @@ class ExamProvider extends ChangeNotifier {
     _sendHeartbeat(); // immediate first ping
   }
 
-  Future<void> _sendHeartbeat() async {
+  void _sendHeartbeat() async {
+    if (_disposed) return;
     try {
       final ip = await MachineInfo.getMachineIp();
       await _api.postHeartbeat({
@@ -266,7 +302,7 @@ class ExamProvider extends ChangeNotifier {
     } catch (_) {
       _serverOnline = false;
     }
-    notifyListeners();
+    if (!_disposed) notifyListeners();
   }
 
   // ── Autosave ──────────────────────────────────────────────
@@ -275,10 +311,11 @@ class ExamProvider extends ChangeNotifier {
       codeGetter: () => _currentCode,
       key: _autosaveKey,
     );
-    // Update timestamp periodically
-    Timer.periodic(
+    // Update timestamp periodically — store timer so we can cancel it
+    _autosaveTimer = Timer.periodic(
       Duration(seconds: ConfigLoader.instance.exam.autosaveIntervalSeconds),
       (_) {
+        if (_disposed) return;
         _lastSavedAt = DateTime.now();
         notifyListeners();
       },
@@ -428,8 +465,11 @@ class ExamProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     _countdownTimer?.cancel();
     _heartbeatTimer?.cancel();
+    _autosaveTimer?.cancel();
+    _assignmentPollTimer?.cancel();
     _autosave.dispose();
     super.dispose();
   }

@@ -3,10 +3,12 @@
 // Project: Lab Exam Client - Koreliurm Labs
 // Author: Pownkumar A (Founder of Koreliurm)
 // Created: 2026-05-15
-// Last Updated: 2026-05-15
+// Last Updated: 2026-05-16
 // Location: Tamil Nadu, India
 // Description: Full-featured code editor using re_editor with Python
 //              syntax highlighting, line numbers, and auto-bracket close.
+//              When focusLocked is true, a pointer-absorbing overlay blocks
+//              all input so students cannot edit after a 3-strike lock.
 // ============================================================
 
 import 'package:flutter/material.dart';
@@ -45,20 +47,23 @@ class _CodeEditorWidgetState extends State<CodeEditorWidget> {
   @override
   Widget build(BuildContext context) {
     final isDark = context.watch<ThemeProvider>().isDark;
+    final isLocked = context.watch<ExamProvider>().focusLocked;
     final lineNumColor =
         isDark ? const Color(0xFF6C7086) : const Color(0xFF9CA3AF);
     final editorBg =
         isDark ? const Color(0xFF1E1E2E) : const Color(0xFFFFFFFF);
 
-    return Container(
+    final editor = Container(
       color: editorBg,
       child: CodeEditor(
         controller: _controller,
         wordWrap: false,
-        onChanged: (CodeLineEditingValue value) {
-          final code = value.codeLines.asString(TextLineBreak.lf);
-          context.read<ExamProvider>().updateCode(code);
-        },
+        onChanged: isLocked
+            ? (_) {} // no-op: reject all changes when locked
+            : (CodeLineEditingValue value) {
+                final code = value.codeLines.asString(TextLineBreak.lf);
+                context.read<ExamProvider>().updateCode(code);
+              },
         style: CodeEditorStyle(
           fontSize: 14,
           fontFamily: 'monospace',
@@ -91,10 +96,52 @@ class _CodeEditorWidgetState extends State<CodeEditorWidget> {
         },
         sperator: Container(
           width: 1,
-          color:
-              isDark ? const Color(0xFF313244) : const Color(0xFFE2E8F0),
+          color: isDark ? const Color(0xFF313244) : const Color(0xFFE2E8F0),
         ),
       ),
+    );
+
+    if (!isLocked) return editor;
+
+    // When locked: stack a full pointer-absorbing overlay so the student
+    // cannot focus, click, or type in the editor at all.
+    return Stack(
+      children: [
+        editor,
+        Positioned.fill(
+          child: AbsorbPointer(
+            absorbing: true,
+            child: ColoredBox(
+              color: const Color(0xFF7C3AED).withValues(alpha: 0.06),
+            ),
+          ),
+        ),
+        // Small lock badge at top-right of editor
+        Positioned(
+          top: 10,
+          right: 16,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: const Color(0xFF7C3AED),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.lock_rounded, color: Colors.white, size: 12),
+                SizedBox(width: 5),
+                Text('Editing Locked',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    )),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
