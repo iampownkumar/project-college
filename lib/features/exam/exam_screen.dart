@@ -63,9 +63,17 @@ class _ExamScreenState extends State<ExamScreen> with WidgetsBindingObserver {
         state == AppLifecycleState.paused) {
       context.read<ExamProvider>().recordFocusLoss();
     }
-    // Re-enforce fullscreen when returning to app
+    // Re-enforce fullscreen after macOS finishes its exit-fullscreen
+    // transition. A delay is required — calling setFullScreen(true) during
+    // the transition causes an NSException crash on macOS.
     if (state == AppLifecycleState.resumed) {
-      windowManager.setFullScreen(true);
+      Future.delayed(const Duration(milliseconds: 800), () {
+        try {
+          windowManager.setFullScreen(true);
+        } catch (_) {
+          // Ignore if transition is still in progress.
+        }
+      });
     }
   }
 
@@ -393,13 +401,32 @@ class _SubmittedOverlay extends StatelessWidget {
                           .withValues(alpha: 0.6)),
                 ),
                 const SizedBox(height: 24),
-                TextButton(
-                  onPressed: () {
-                    // Dismiss overlay — ExamProvider.submitted stays true
-                    // so the button shows "Submitted ✓"
-                    context.read<ExamProvider>().dismissOverlay();
-                  },
-                  child: const Text('Continue Editing'),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        // Dismiss overlay — submitted stays true
+                        context.read<ExamProvider>().dismissOverlay();
+                      },
+                      child: const Text('Continue Editing'),
+                    ),
+                    const SizedBox(width: 12),
+                    FilledButton.icon(
+                      onPressed: () {
+                        // Navigate back to login — ExamProvider is
+                        // re-created fresh on the next /exam visit.
+                        Navigator.of(context).pushNamedAndRemoveUntil(
+                          '/', (route) => false,
+                        );
+                      },
+                      icon: const Icon(Icons.logout_rounded, size: 16),
+                      label: const Text('Return to Login'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF10B981),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

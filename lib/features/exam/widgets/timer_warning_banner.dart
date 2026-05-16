@@ -25,20 +25,45 @@ class TimerWarningBanner extends StatelessWidget {
     if (exam.focusLocked) {
       return Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         color: const Color(0xFF7C3AED),
-        child: const Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.lock_rounded, color: Colors.white, size: 18),
-            SizedBox(width: 10),
-            Text(
-              '🔒  EXAM LOCKED — You switched windows 3 times. Code auto-submitted.',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
-                letterSpacing: 0.2,
+            const Icon(Icons.lock_rounded, color: Colors.white, size: 16),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Text(
+                '🔒  EXAM LOCKED — You switched windows 3 times. Code auto-submitted.',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Let student return to login for a new session
+            TextButton.icon(
+              onPressed: () => Navigator.of(context).pushNamedAndRemoveUntil(
+                '/', (route) => false,
+              ),
+              icon: const Icon(Icons.logout_rounded, color: Colors.white, size: 14),
+              label: const Text(
+                'Return to Login',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 12,
+                ),
+              ),
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.white.withValues(alpha: 0.2),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  side: BorderSide(color: Colors.white.withValues(alpha: 0.4)),
+                ),
               ),
             ),
           ],
