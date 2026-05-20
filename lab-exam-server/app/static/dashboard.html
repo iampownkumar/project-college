@@ -96,7 +96,7 @@
                     <label class="text-sm font-bold text-blue-800 mr-3">Global Department Filter:</label>
                     <select id="globalDeptSelect"
                         class="bg-white border-gray-300 text-sm rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                        onchange="applyGlobalFilter()">
+                        onchange="loadInitialData()">
                         <option value="all">All Departments</option>
                     </select>
                 </div>
@@ -235,7 +235,7 @@
                                 <button onclick="openModal('bulkQuestionModal')"
                                     class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">
                                     Bulk Upload (JSON)</button>
-                                <button onclick="openModal('questionModal')"
+                                <button onclick="openModal('questionModal'); document.getElementById('testCasesContainer').innerHTML=''; addTestCaseRow();"
                                     class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">+
                                     New Question</button>
                             </div>
@@ -540,6 +540,20 @@
                     <label class="block text-sm font-medium text-gray-700">Starter Code (optional)</label>
                     <textarea id="qStarter" rows="3"
                         class="mt-1 block w-full border-gray-300 rounded-md shadow-sm font-mono text-sm"></textarea>
+                </div>
+                <!-- Test Cases -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-sm font-medium text-gray-700">Test Cases <span class="text-red-500">*</span></label>
+                        <button type="button" onclick="addTestCaseRow()"
+                            class="text-xs text-blue-600 hover:text-blue-800 font-bold border border-blue-200 bg-blue-50 px-2 py-1 rounded">
+                            + Add Test Case
+                        </button>
+                    </div>
+                    <div id="testCasesContainer" class="space-y-2">
+                        <!-- rows added by addTestCaseRow() -->
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1">At least one test case is required.</p>
                 </div>
             </div>
             <div class="mt-6 flex justify-end space-x-3">
@@ -1272,22 +1286,83 @@
             data.forEach(q => mq.innerHTML += `<option value="${q.id}">${q.title}</option>`);
         }
 
+        function addTestCaseRow() {
+            const container = document.getElementById('testCasesContainer');
+            const idx = container.children.length;
+            const div = document.createElement('div');
+            div.className = 'grid grid-cols-2 gap-2 p-2 bg-gray-50 border border-gray-200 rounded relative';
+            div.innerHTML = `
+                <div>
+                    <label class="text-xs text-gray-500 font-medium">Input</label>
+                    <textarea class="tc-input w-full border-gray-300 rounded text-xs font-mono p-1 mt-0.5" rows="2" placeholder="stdin (leave blank if none)"></textarea>
+                </div>
+                <div>
+                    <label class="text-xs text-gray-500 font-medium">Expected Output <span class="text-red-400">*</span></label>
+                    <textarea class="tc-output w-full border-gray-300 rounded text-xs font-mono p-1 mt-0.5" rows="2" placeholder="expected stdout"></textarea>
+                </div>
+                <div class="col-span-2 flex items-center gap-3">
+                    <label class="text-xs text-gray-500">Marks:</label>
+                    <input type="number" class="tc-marks border-gray-300 rounded text-xs w-16 p-1" value="1" min="0">
+                    <label class="text-xs text-gray-500 ml-3">
+                        <input type="checkbox" class="tc-visible mr-1">Visible example
+                    </label>
+                    <button type="button" onclick="this.closest('div.grid').remove()"
+                        class="ml-auto text-xs text-red-500 hover:text-red-700">✕ Remove</button>
+                </div>`;
+            container.appendChild(div);
+        }
+
         async function createQuestion() {
             const sid = document.getElementById('mqSession').value;
             if (!sid) return showToast("Select session first", true);
+            const title = document.getElementById('qTitle').value.trim();
+            if (!title) return showToast("Title is required", true);
+            const stmt = document.getElementById('qStmt').value.trim();
+            if (!stmt) return showToast("Problem statement is required", true);
+
+            // Collect test cases
+            const tcRows = document.querySelectorAll('#testCasesContainer > div');
+            if (tcRows.length === 0) return showToast("Add at least one test case", true);
+
+            const testCases = [];
+            const visibleExamples = [];
+            let valid = true;
+            tcRows.forEach((row, i) => {
+                const out = row.querySelector('.tc-output').value.trim();
+                if (!out) { showToast(`Test case ${i+1}: expected output is required`, true); valid = false; }
+                const inp = row.querySelector('.tc-input').value;
+                const marks = parseInt(row.querySelector('.tc-marks').value) || 1;
+                const isVisible = row.querySelector('.tc-visible').checked;
+                testCases.push({ input: inp, expected_output: out, marks });
+                if (isVisible) visibleExamples.push({ input: inp, output: out, explanation: '' });
+            });
+            if (!valid) return;
+
             const payload = {
                 session_id: parseInt(sid),
-                title: document.getElementById('qTitle').value,
-                statement: document.getElementById('qStmt').value,
-                starter_code: document.getElementById('qStarter').value
+                title,
+                statement: stmt,
+                starter_code: document.getElementById('qStarter').value,
+                test_cases: testCases,
+                visible_examples: visibleExamples,
+                language: 'python',
+                constraints: []
             };
             const res = await fetch(`${API_BASE}/question`, {
                 method: 'POST', headers: getHeaders(), body: JSON.stringify(payload)
             });
             if (res.ok) {
+                // Reset modal
+                document.getElementById('qTitle').value = '';
+                document.getElementById('qStmt').value = '';
+                document.getElementById('qStarter').value = '';
+                document.getElementById('testCasesContainer').innerHTML = '';
                 closeModal('questionModal');
                 loadQuestionsForSession(document.getElementById('qSessionSelect').value);
                 showToast("Question Added");
+            } else {
+                const err = await res.json().catch(() => ({}));
+                showToast("Failed: " + (err.detail || err.message || 'Unknown error'), true);
             }
         }
 
