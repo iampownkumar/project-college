@@ -5,6 +5,9 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-windows:
     runs-on: windows-latest
@@ -28,8 +31,19 @@ jobs:
           cd lab-exam-client
           flutter build windows
 
-      - name: Upload Build Artifact
-        uses: actions/upload-artifact@v4
+      - name: Package Windows Build into Zip
+        run: |
+          Compress-Archive -Path lab-exam-client/build/windows/x64/runner/Release/* -DestinationPath lab-exam-client-windows.zip
+        shell: pwsh
+
+      - name: Create Release and Upload Windows Client
+        uses: softprops/action-gh-release@v2
         with:
-          name: lab-exam-client-windows
-          path: lab-exam-client/build/windows/x64/runner/Release/
+          tag_name: latest
+          name: "Latest Windows Client Build"
+          body: "Automated rolling build of the Windows client application."
+          files: lab-exam-client-windows.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
