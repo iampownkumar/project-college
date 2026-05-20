@@ -10,9 +10,11 @@
 # ============================================================
 
 from fastapi import APIRouter
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from app.schemas.common import HealthResponse
 from app.core.config import settings
+
+IST = timezone(timedelta(hours=5, minutes=30))
 
 router = APIRouter(tags=["Health"])
 
@@ -21,7 +23,7 @@ router = APIRouter(tags=["Health"])
     "/health",
     response_model=HealthResponse,
     summary="Health check",
-    description="Returns current server status, UTC timestamp, and application version.",
+    description="Returns current server status, IST timestamp, and application version.",
 )
 def health_check() -> HealthResponse:
     """
@@ -29,11 +31,11 @@ def health_check() -> HealthResponse:
 
     Returns:
         status: "ok"
-        server_time: current UTC ISO timestamp
+        server_time: current IST ISO timestamp
         version: application version string
     """
     return HealthResponse(
         status="ok",
-        server_time=datetime.now(timezone.utc).isoformat(),
+        server_time=datetime.now(IST).isoformat(),
         version=settings.app_version,
     )

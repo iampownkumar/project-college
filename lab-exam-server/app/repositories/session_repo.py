@@ -26,19 +26,19 @@ class SessionRepository:
         """Return the first active session (MVP assumes at most one active).
         If the session's end_time has passed it is automatically closed here
         so callers never see a stale 'active' session."""
-        from datetime import datetime, timezone
+        from datetime import datetime, timezone, timedelta
+        IST = timezone(timedelta(hours=5, minutes=30))
         session = (
             self.db.query(ExamSession)
             .filter(ExamSession.status == SessionStatus.active)
             .first()
         )
         if session and session.end_time:
-            now = datetime.now(timezone.utc)
-            # Normalise to UTC if end_time is naive (stored without tz)
+            now = datetime.now(IST)
+            # Normalise to IST if end_time is naive (stored without tz)
             end = session.end_time
             if end.tzinfo is None:
-                from datetime import timezone as tz
-                end = end.replace(tzinfo=tz.utc)
+                end = end.replace(tzinfo=IST)
             if now >= end:
                 session.status = SessionStatus.closed
                 self.db.commit()

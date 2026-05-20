@@ -11,7 +11,8 @@
 
 from sqlalchemy.orm import Session
 from typing import Optional, List
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+IST = timezone(timedelta(hours=5, minutes=30))
 from app.models.heartbeat import Heartbeat
 
 
@@ -56,7 +57,7 @@ class HeartbeatRepository:
             existing.machine_name = machine_name
             existing.machine_ip = machine_ip
             existing.client_state = client_state
-            existing.last_seen_at = datetime.now(timezone.utc)
+            existing.last_seen_at = datetime.now(IST)
             self.db.commit()
             self.db.refresh(existing)
             return existing
@@ -67,7 +68,7 @@ class HeartbeatRepository:
                 machine_name=machine_name,
                 machine_ip=machine_ip,
                 client_state=client_state,
-                last_seen_at=datetime.now(timezone.utc),
+                last_seen_at=datetime.now(IST),
             )
             self.db.add(hb)
             self.db.commit()

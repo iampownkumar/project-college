@@ -13,6 +13,7 @@
 
 import json
 from datetime import datetime, timezone, timedelta
+IST = timezone(timedelta(hours=5, minutes=30))
 from typing import Optional, List, Tuple
 
 from sqlalchemy.orm import Session as DBSession
@@ -142,7 +143,7 @@ class AdminService:
                     f"Admin: auto-closed previous active session id={current_active.id}"
                 )
             # Set exact start and end time based on activation
-            session.start_time = datetime.now(timezone.utc)
+            session.start_time = datetime.now(IST)
             session.end_time = session.start_time + timedelta(minutes=session.duration_minutes)
 
         try:
@@ -518,7 +519,7 @@ class AdminService:
 
         assignments = self.assignment_repo.get_all_for_session(session_id)
         # Consider online = last heartbeat within 90 seconds
-        online_threshold = datetime.now(timezone.utc) - timedelta(seconds=90)
+        online_threshold = datetime.now(IST) - timedelta(seconds=90)
 
         student_statuses: List[StudentLiveStatus] = []
         online_count = 0
@@ -560,7 +561,7 @@ class AdminService:
                 if hb.last_seen_at:
                     hb_time = hb.last_seen_at
                     if hb_time.tzinfo is None:
-                        hb_time = hb_time.replace(tzinfo=timezone.utc)
+                        hb_time = hb_time.replace(tzinfo=IST)
                     is_online = hb_time >= online_threshold
 
             if is_online:

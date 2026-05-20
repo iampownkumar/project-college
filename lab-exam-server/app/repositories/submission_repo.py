@@ -11,7 +11,8 @@
 
 from sqlalchemy.orm import Session
 from typing import Optional
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+IST = timezone(timedelta(hours=5, minutes=30))
 from app.models.submission import Submission
 
 
@@ -50,7 +51,7 @@ class SubmissionRepository:
         On resubmission: increments submit_count and marks type='resubmission'.
         """
         existing = self.get_by_student_and_session(student_id, session_id)
-        ts = submitted_at or datetime.now(timezone.utc)
+        ts = submitted_at or datetime.now(IST)
 
         if existing:
             existing.question_id = question_id
