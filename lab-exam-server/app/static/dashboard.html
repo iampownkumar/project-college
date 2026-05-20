@@ -96,7 +96,7 @@
                     <label class="text-sm font-bold text-blue-800 mr-3">Global Department Filter:</label>
                     <select id="globalDeptSelect"
                         class="bg-white border-gray-300 text-sm rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                        onchange="loadInitialData()">
+                        onchange="globalDept=this.value; localStorage.setItem('globalDept', globalDept); loadInitialData();">
                         <option value="all">All Departments</option>
                     </select>
                 </div>
@@ -679,58 +679,6 @@
         let rawAllStudents = [];
         let rawAllSessions = [];
 
-        // GLOBAL COUNTDOWN INTERVAL
-        setInterval(() => {
-            // Table countdowns
-            document.querySelectorAll('.session-countdown').forEach(el => {
-                const endStr = el.getAttribute('data-end');
-                if (!endStr) return;
-                const end = new Date(endStr).getTime();
-                const now = new Date().getTime();
-                const diff = end - now;
-                if (diff <= 0) {
-                    el.innerHTML = '<span class="text-red-600 font-bold">Expired</span>';
-                } else {
-                    const h = Math.floor(diff / (1000 * 60 * 60));
-                    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                    const s = Math.floor((diff % (1000 * 60)) / 1000);
-                    el.innerHTML = `<span class="text-green-600 font-bold font-mono text-sm">${h}h ${m}m ${s}s left</span>`;
-                }
-            });
-
-            // Top bar countdown + AUTO-CLOSE when session expires
-            const activeSession = filteredSessions.find(s => s.status === 'active' && s.end_time);
-            const topDiv = document.getElementById('topActiveSession');
-            const topCount = document.getElementById('topCountdown');
-            if (activeSession) {
-                const end = new Date(activeSession.end_time).getTime();
-                const diff = end - new Date().getTime();
-                topDiv.classList.remove('hidden');
-                if (diff <= 0) {
-                    topCount.innerText = 'EXPIRED';
-                    if (!window._autoClosingSession) {
-                        window._autoClosingSession = true;
-                        fetch(`${API_BASE}/session/${activeSession.id}/status`, {
-                            method: 'PUT',
-                            headers: getHeaders(),
-                            body: JSON.stringify({ status: 'closed' })
-                        }).then(() => {
-                            showToast('Session auto-closed — time expired');
-                            window._autoClosingSession = false;
-                            loadInitialData();
-                        }).catch(() => { window._autoClosingSession = false; });
-                    }
-                } else {
-                    const h = Math.floor(diff / (1000 * 60 * 60));
-                    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
-                    const s = Math.floor((diff % (1000 * 60)) / 1000).toString().padStart(2, '0');
-                    topCount.innerText = `${h}:${m}:${s}`;
-                }
-            } else {
-                if (topDiv) topDiv.classList.add('hidden');
-                window._autoClosingSession = false;
-            }
-        }, 1000);
         let filteredStudents = [];
         let filteredSessions = [];
 

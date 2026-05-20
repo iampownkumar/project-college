@@ -59,7 +59,7 @@ echo "[run_dev] Starting uvicorn at http://${HOST}:${PORT}"
 echo "[run_dev] API docs: http://localhost:${PORT}/docs"
 echo ""
 
-exec uvicorn app.main:app \
+python -m uvicorn app.main:app \
     --host "$HOST" \
     --port "$PORT" \
     --reload \
