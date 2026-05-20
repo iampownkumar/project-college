@@ -1,0 +1,15 @@
+{
+  "pythonVersion": "3.14",
+  "pythonPlatform": "Linux",
+  "venvPath": "/Users/pownkumar/dev-workspace/project college/lab-exam-server",
+  "venv": "venv",
+  "include": [
+    "app",
+    "scripts",
+    "tests"
+  ],
+  "exclude": [
+    "venv",
+    "**/__pycache__"
+  ]
+}

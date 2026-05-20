@@ -1,0 +1,13 @@
+{
+  "sessions": [
+    {
+      "title": "Python Lab Exam - Unit 1",
+      "department": "Computer Science",
+      "language": "python",
+      "duration_minutes": 90,
+      "status": "active",
+      "start_time": null,
+      "end_time": null
+    }
+  ]
+}

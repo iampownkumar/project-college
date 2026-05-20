@@ -1,0 +1,16 @@
+// ============================================================
+// File: lib/app/routes.dart
+// Project: Lab Exam Client - Koreliurm Labs
+// Author: Pownkumar A (Founder of Koreliurm)
+// Created: 2026-05-15
+// Last Updated: 2026-05-15
+// Location: Tamil Nadu, India
+// Description: Named route constants used across the app.
+//              '/' → LoginScreen, '/exam' → ExamScreen.
+// ============================================================
+
+class AppRoutes {
+  AppRoutes._();
+  static const String login = '/';
+  static const String exam = '/exam';
+}

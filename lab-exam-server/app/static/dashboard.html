@@ -1,0 +1,1604 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab Exam Coordinator Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #f3f4f6;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .undo-toast {
+            animation: slideIn 0.3s ease-out forwards;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body class="text-gray-800 h-screen flex overflow-hidden">
+    <!-- Login Overlay -->
+    <div id="loginOverlay" class="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center">
+        <div class="bg-white p-8 rounded-lg shadow-xl w-96">
+            <h2 class="text-2xl font-bold text-center text-blue-600 mb-6">Staff Login</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Staff Code</label>
+                    <input type="text" id="staffCode"
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="e.g. CSL42">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Password</label>
+                    <input type="password" id="staffPassword"
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="••••••••">
+                </div>
+                <button onclick="performLogin()"
+                    class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    Sign in
+                </button>
+                <p id="loginError" class="text-red-500 text-sm text-center hidden"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Undo Toast Container -->
+    <div id="undoContainer" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+
+    <!-- Main App (Hidden until login) -->
+    <div id="mainApp" class="w-full h-full flex flex-col hidden">
+
+        <!-- Top Navbar for Global Context -->
+        <header
+            class="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-6 shrink-0 z-20 shadow-sm">
+            <div class="flex items-center space-x-4">
+                <h1 class="text-xl font-bold text-blue-600">Koreliurm Labs <span
+                        class="text-gray-400 font-normal text-sm ml-2">Coordinator</span></h1>
+            </div>
+
+            <div class="flex items-center space-x-6">
+                <div id="topActiveSession"
+                    class="hidden flex items-center bg-red-50 px-4 py-2 rounded-lg border border-red-100">
+                    <span class="text-xs font-bold text-red-800 mr-2 uppercase">Active Session:</span>
+                    <span id="topCountdown" class="font-mono font-bold text-red-600 text-sm">--:--:--</span>
+                </div>
+                <div class="flex items-center bg-blue-50 px-4 py-2 rounded-lg border border-blue-100">
+
+                    <label class="text-sm font-bold text-blue-800 mr-3">Global Department Filter:</label>
+                    <select id="globalDeptSelect"
+                        class="bg-white border-gray-300 text-sm rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                        onchange="applyGlobalFilter()">
+                        <option value="all">All Departments</option>
+                    </select>
+                </div>
+                <div class="flex items-center space-x-4 border-l pl-6 border-gray-200">
+                    <p id="staffNameDisplay" class="text-sm text-gray-600 font-medium"></p>
+                    <button onclick="logout()" class="text-sm text-red-600 hover:text-red-800 font-bold">Logout</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="flex-1 flex overflow-hidden">
+            <!-- Sidebar -->
+            <aside class="w-64 bg-gray-50 border-r border-gray-200 flex flex-col z-10 shrink-0">
+                <nav class="flex-1 p-4 space-y-2 overflow-y-auto mt-2">
+
+                    <button onclick="switchTab('departments')"
+                        class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg text-left tab-btn text-gray-600 hover:bg-gray-100"
+                        data-tab="departments">
+                        Departments
+                    </button>
+                    <button onclick="switchTab('sessions')"
+                        class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg text-left tab-btn active bg-blue-100 text-blue-700"
+                        data-tab="sessions">
+                        Sessions
+                    </button>
+                    <button onclick="switchTab('questions')"
+                        class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg text-left tab-btn text-gray-600 hover:bg-gray-100"
+                        data-tab="questions">
+                        Questions
+                    </button>
+                    <button onclick="switchTab('students')"
+                        class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg text-left tab-btn text-gray-600 hover:bg-gray-100"
+                        data-tab="students">
+                        Students
+                    </button>
+                    <button onclick="switchTab('assignments')"
+                        class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg text-left tab-btn text-gray-600 hover:bg-gray-100"
+                        data-tab="assignments">
+                        Assignments
+                    </button>
+                    <button onclick="switchTab('monitor')"
+                        class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg text-left tab-btn text-gray-600 hover:bg-gray-100"
+                        data-tab="monitor">
+                        Live Monitor
+                    </button>
+                    <button onclick="switchTab('submissions')"
+                        class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg text-left tab-btn text-gray-600 hover:bg-gray-100"
+                        data-tab="submissions">
+                        Submissions
+                    </button>
+                </nav>
+
+                </nav>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="flex-1 overflow-y-auto p-8 relative bg-white">
+                <div id="toast"
+                    class="fixed top-4 right-4 bg-gray-800 text-white px-4 py-2 rounded shadow-lg transition-opacity duration-300 opacity-0 pointer-events-none z-50">
+                </div>
+
+                <!-- Initial State (Before Dept Selected) -->
+                <div id="selectDeptPrompt" class="flex flex-col items-center justify-center h-full text-center">
+                    <div class="w-24 h-24 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mb-4">
+                        <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">
+                            </path>
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-800">Welcome, Coordinator</h2>
+                    <p class="text-gray-500 mt-2 max-w-md">Please select a Department from the top menu to view and
+                        manage your exam sessions.</p>
+                </div>
+
+                <!-- Data Container (Hidden until Dept Selected) -->
+                <div id="dataContainer" class="hidden">
+
+
+                    <!-- DEPARTMENTS TAB -->
+                    <div id="departments-tab" class="tab-content">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-3xl font-bold text-gray-800">Departments</h2>
+                            <button onclick="openModal('deptModal')"
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">+
+                                New Department</button>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                            <table class="w-full text-left text-sm">
+                                <thead
+                                    class="bg-gray-50 text-gray-600 text-xs uppercase font-semibold border-b border-gray-200">
+                                    <tr>
+                                        <th class="px-6 py-4">ID</th>
+                                        <th class="px-6 py-4">Name</th>
+                                        <th class="px-6 py-4">Code</th>
+                                        <th class="px-6 py-4 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="deptsList" class="divide-y divide-gray-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- SESSIONS TAB -->
+
+                    <div id="sessions-tab" class="tab-content active">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-3xl font-bold text-gray-800">Exam Sessions</h2>
+                            <button onclick="openModal('sessionModal')"
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">+
+                                New Session</button>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                            <table class="w-full text-left text-sm">
+                                <thead
+                                    class="bg-gray-50 text-gray-600 text-xs uppercase font-semibold border-b border-gray-200">
+                                    <tr>
+                                        <th class="px-6 py-4">ID</th>
+                                        <th class="px-6 py-4">Title</th>
+                                        <th class="px-6 py-4">Dept</th>
+                                        <th class="px-6 py-4">Time limit</th>
+                                        <th class="px-6 py-4">Status</th>
+                                        <th class="px-6 py-4 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sessionsList" class="divide-y divide-gray-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- QUESTIONS TAB -->
+                    <div id="questions-tab" class="tab-content">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-3xl font-bold text-gray-800">Questions</h2>
+                            <div class="flex space-x-2">
+                                <button onclick="openModal('bulkQuestionModal')"
+                                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">
+                                    Bulk Upload (JSON)</button>
+                                <button onclick="openModal('questionModal')"
+                                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">+
+                                    New Question</button>
+                            </div>
+                        </div>
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Select Session to View
+                                Questions</label>
+                            <select id="qSessionSelect"
+                                class="w-full md:w-1/3 border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                onchange="loadQuestionsForSession(this.value)">
+                                <option value="">-- Select Session --</option>
+                            </select>
+                        </div>
+                        <div id="questionsList" class="space-y-4"></div>
+                    </div>
+
+                    <!-- STUDENTS TAB -->
+                    <div id="students-tab" class="tab-content">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-3xl font-bold text-gray-800">Students</h2>
+                            <div class="flex space-x-2">
+                                <div class="flex space-x-2 mr-4 items-center">
+                                    <span class="text-sm text-gray-500">Filter Section:</span>
+                                    <select id="filterSec" class="border-gray-300 rounded-md text-sm"
+                                        onchange="renderStudents()">
+                                        <option value="all">All Sections</option>
+                                    </select>
+                                </div>
+                                <button onclick="openModal('bulkStudentModal')"
+                                    class="bg-gray-100 text-gray-700 hover:bg-gray-200 px-4 py-2 rounded-lg text-sm font-medium border border-gray-200">Bulk
+                                    Upload</button>
+                                <button onclick="openModal('studentModal')"
+                                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm">+
+                                    Add Student</button>
+                            </div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                            <table class="w-full text-left text-sm">
+                                <thead
+                                    class="bg-gray-50 text-gray-600 text-xs uppercase font-semibold border-b border-gray-200">
+                                    <tr>
+                                        <th class="px-6 py-4">Reg No</th>
+                                        <th class="px-6 py-4">Name</th>
+                                        <th class="px-6 py-4">Dept</th>
+                                        <th class="px-6 py-4">Sec</th>
+                                        <th class="px-6 py-4">Status</th>
+                                        <th class="px-6 py-4 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="studentsList" class="divide-y divide-gray-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- ASSIGNMENTS TAB -->
+                    <div id="assignments-tab" class="tab-content">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-3xl font-bold text-gray-800">Assignments</h2>
+                            <div class="flex space-x-2">
+                                <button onclick="openModal('assignmentModal')"
+                                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm">+
+                                    Assign to Class</button>
+                            </div>
+                        </div>
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Select Session</label>
+                            <select id="aSessionSelect"
+                                class="w-full md:w-1/3 border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                onchange="loadAssignmentsForSession(this.value)">
+                                <option value="">-- Select Session --</option>
+                            </select>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                            <table class="w-full text-left text-sm">
+                                <thead
+                                    class="bg-gray-50 text-gray-600 text-xs uppercase font-semibold border-b border-gray-200">
+                                    <tr>
+                                        <th class="px-6 py-4">Student</th>
+                                        <th class="px-6 py-4">Assigned Question</th>
+                                        <th class="px-6 py-4">Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="assignmentsList" class="divide-y divide-gray-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- LIVE MONITOR TAB -->
+                    <div id="monitor-tab" class="tab-content">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-3xl font-bold text-gray-800">Live Monitor</h2>
+                            <button onclick="refreshMonitor()"
+                                class="text-blue-600 hover:underline text-sm font-medium">↻ Refresh</button>
+                        </div>
+                        <div class="mb-6 flex space-x-4 items-end">
+                            <div class="w-1/3">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Select Session</label>
+                                <select id="mSessionSelect"
+                                    class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                    onchange="refreshMonitor()">
+                                    <option value="">-- Select Session --</option>
+                                </select>
+                            </div>
+                            <div class="text-sm text-gray-600 pb-2">
+                                Online: <span id="mOnlineCount" class="font-bold text-green-600">0</span> / <span
+                                    id="mTotalCount">0</span>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="monitorGrid"></div>
+                    </div>
+
+                    <!-- SUBMISSIONS TAB -->
+                    <div id="submissions-tab" class="tab-content">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-3xl font-bold text-gray-800">Submissions</h2>
+                            <button onclick="refreshSubmissions()"
+                                class="text-blue-600 hover:underline text-sm font-medium">↻ Refresh</button>
+                        </div>
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Select Session</label>
+                            <select id="subSessionSelect"
+                                class="w-full md:w-1/3 border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                onchange="refreshSubmissions()">
+                                <option value="">-- Select Session --</option>
+                            </select>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                            <table class="w-full text-left text-sm">
+                                <thead
+                                    class="bg-gray-50 text-gray-600 text-xs uppercase font-semibold border-b border-gray-200">
+                                    <tr>
+                                        <th class="px-6 py-4">Student</th>
+                                        <th class="px-6 py-4">Question</th>
+                                        <th class="px-6 py-4">Type</th>
+                                        <th class="px-6 py-4">Tries</th>
+                                        <th class="px-6 py-4">Time</th>
+                                        <th class="px-6 py-4">Code</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="submissionsList" class="divide-y divide-gray-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div> <!-- End Data Container -->
+            </main>
+        </div>
+    </div>
+
+    <!-- MODALS -->
+
+
+    <!-- Department Modal -->
+    <div id="deptModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-[400px]">
+            <h3 class="text-lg font-bold mb-4 text-gray-800">Add Department</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Department Name</label>
+                    <input type="text" id="dName" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                        placeholder="e.g. Computer Science">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Department Code</label>
+                    <input type="text" id="dCode"
+                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm uppercase" placeholder="e.g. CSE">
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button onclick="closeModal('deptModal')"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md">Cancel</button>
+                <button onclick="createDepartment()"
+                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Session Modal -->
+
+    <div id="sessionModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-[500px]">
+            <h3 class="text-lg font-bold mb-4 text-gray-800">Create Session</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Title</label>
+                    <input type="text" id="sTitle"
+                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        placeholder="e.g. Unit 1 Python Test">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Department</label>
+                    <input type="text" id="sDept" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                        placeholder="e.g. CSE">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Language</label>
+                        <select id="sLang" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                            <option value="python">Python</option>
+                            <option value="c">C</option>
+                            <option value="cpp">C++</option>
+                            <option value="java">Java</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Duration (mins)</label>
+                        <input type="number" id="sMins" value="60"
+                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Start Time</label>
+                        <input type="datetime-local" id="sStart"
+                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">End Time</label>
+                        <input type="datetime-local" id="sEnd"
+                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    </div>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button onclick="closeModal('sessionModal')"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md">Cancel</button>
+                <button onclick="createSession()"
+                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md">Create</button>
+            </div>
+        </div>
+    </div>
+    <!-- Bulk Question Modal -->
+    <div id="bulkQuestionModal"
+        class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-[500px]">
+            <h3 class="text-lg font-bold mb-4 text-gray-800">Bulk Upload Questions (CSV)</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Target Session</label>
+                    <select id="bqSession" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"></select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">CSV File</label>
+                    <input type="file" id="bqFile" accept=".csv"
+                        class="mt-1 block w-full border border-gray-300 p-2 rounded-md shadow-sm">
+                    <p class="mt-1 text-xs text-gray-500">File must be a CSV with specific question columns.
+                    </p>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button onclick="closeModal('bulkQuestionModal')"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md">Cancel</button>
+                <button onclick="submitBulkQuestionsCsv()"
+                    class="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md">Upload</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Student Modal -->
+    <div id="bulkStudentModal"
+        class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-[500px]">
+            <h3 class="text-lg font-bold mb-4 text-gray-800">Bulk Upload Students (CSV)</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">CSV File</label>
+                    <input type="file" id="bsFile" accept=".csv"
+                        class="mt-1 block w-full border border-gray-300 p-2 rounded-md shadow-sm">
+                    <p class="mt-1 text-xs text-gray-500">Format: department, section, register number, name, year
+                    </p>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button onclick="closeModal('bulkStudentModal')"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md">Cancel</button>
+                <button onclick="submitBulkStudentsCsv()"
+                    class="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md">Upload</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Question Modal -->
+    <div id="questionModal"
+        class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-[600px] max-h-[90vh] overflow-y-auto">
+            <h3 class="text-lg font-bold mb-4 text-gray-800">Add Question</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Session</label>
+                    <select id="mqSession" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"></select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Title</label>
+                    <input type="text" id="qTitle" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                        placeholder="e.g. Reverse Array">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Statement</label>
+                    <textarea id="qStmt" rows="3"
+                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Starter Code (optional)</label>
+                    <textarea id="qStarter" rows="3"
+                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm font-mono text-sm"></textarea>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button onclick="closeModal('questionModal')"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md">Cancel</button>
+                <button onclick="createQuestion()"
+                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Student Modal -->
+    <div id="studentModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-[400px]">
+            <h3 class="text-lg font-bold mb-4 text-gray-800">Add Student</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Registration Number</label>
+                    <input type="text" id="stReg"
+                        class="mt-1 block w-full border-gray-300 rounded-md shadow-sm uppercase">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Name</label>
+                    <input type="text" id="stName" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Department</label>
+                    <input type="text" id="stDept" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                </div>
+                <div class="grid grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Batch</label>
+                        <input type="text" id="stBatch" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Year</label>
+                        <select id="stYear" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                            <option value="1st">1st</option>
+                            <option value="2nd">2nd</option>
+                            <option value="3rd">3rd</option>
+                            <option value="4th">4th</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Section</label>
+                        <input type="text" id="stSec"
+                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm uppercase">
+                    </div>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button onclick="closeModal('studentModal')"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md">Cancel</button>
+                <button onclick="createStudent()"
+                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Multi Assign Modal -->
+    <div id="assignmentModal"
+        class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-[500px]">
+            <h3 class="text-lg font-bold mb-4 text-gray-800">Assign Questions to Class</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Session</label>
+                    <select id="maSession" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"
+                        onchange="loadQuestionsForMultiAssign(this.value)"></select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Question Selection</label>
+                    <select id="maQuestion" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                        <option value="">-- Auto Round Robin All Questions --</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Target Year</label>
+                        <select id="maYear" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                            <option value="all">All Years</option>
+                            <option value="1st">1st Year</option>
+                            <option value="2nd">2nd Year</option>
+                            <option value="3rd">3rd Year</option>
+                            <option value="4th">4th Year</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Target Section</label>
+                        <input type="text" id="maSec" placeholder="e.g., A (Leave empty for All)"
+                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm uppercase">
+                    </div>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button onclick="closeModal('assignmentModal')"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md">Cancel</button>
+                <button onclick="submitMultiAssign()"
+                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md">Assign</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Code View Modal -->
+    <div id="codeModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white rounded-xl shadow-2xl w-[800px] h-[600px] flex flex-col">
+            <div class="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-xl">
+                <h3 class="font-bold">Submission Code</h3>
+                <button onclick="closeModal('codeModal')" class="text-gray-500 hover:text-gray-800">✕</button>
+            </div>
+            <div class="flex-1 p-4 overflow-auto bg-gray-900">
+                <pre><code id="codeViewContent" class="text-green-400 font-mono text-sm"></code></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/v1/admin';
+        let adminKey = localStorage.getItem('adminKey') || '';
+        let staffCode = localStorage.getItem('staffCode') || '';
+        let globalDept = localStorage.getItem('globalDept') || '';
+
+        let rawAllStudents = [];
+        let rawAllSessions = [];
+
+        // GLOBAL COUNTDOWN INTERVAL
+        setInterval(() => {
+            // Table countdowns
+            document.querySelectorAll('.session-countdown').forEach(el => {
+                const endStr = el.getAttribute('data-end');
+                if (!endStr) return;
+                const end = new Date(endStr).getTime();
+                const now = new Date().getTime();
+                const diff = end - now;
+                if (diff <= 0) {
+                    el.innerHTML = '<span class="text-red-600 font-bold">Expired</span>';
+                } else {
+                    const h = Math.floor(diff / (1000 * 60 * 60));
+                    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    const s = Math.floor((diff % (1000 * 60)) / 1000);
+                    el.innerHTML = `<span class="text-green-600 font-bold font-mono text-sm">${h}h ${m}m ${s}s left</span>`;
+                }
+            });
+
+            // Top bar countdown
+            const activeSession = filteredSessions.find(s => s.status === 'active' && s.end_time);
+            const topDiv = document.getElementById('topActiveSession');
+            const topCount = document.getElementById('topCountdown');
+            if (activeSession) {
+                const end = new Date(activeSession.end_time).getTime();
+                const diff = end - new Date().getTime();
+                topDiv.classList.remove('hidden');
+                if (diff <= 0) {
+                    topCount.innerText = 'EXPIRED';
+                } else {
+                    const h = Math.floor(diff / (1000 * 60 * 60));
+                    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+                    const s = Math.floor((diff % (1000 * 60)) / 1000).toString().padStart(2, '0');
+                    topCount.innerText = `${h}:${m}:${s}`;
+                }
+            } else {
+                if (topDiv) topDiv.classList.add('hidden');
+            }
+        }, 1000);
+        let filteredStudents = [];
+        let filteredSessions = [];
+
+        let pendingDeletions = {}; // regNum -> timeout ID
+
+        // Initialize App
+        if (adminKey) {
+            document.getElementById('loginOverlay').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+            document.getElementById('staffNameDisplay').innerText = `Logged in as ${staffCode}`;
+            loadInitialData();
+        }
+
+        async function performLogin() {
+            const sc = document.getElementById('staffCode').value;
+            const pwd = document.getElementById('staffPassword').value;
+            const err = document.getElementById('loginError');
+            err.classList.add('hidden');
+
+            try {
+                const res = await fetch('/api/v1/auth/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ staff_code: sc, password: pwd })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    adminKey = data.admin_key;
+                    staffCode = data.staff_code;
+                    localStorage.setItem('adminKey', adminKey);
+                    localStorage.setItem('staffCode', staffCode);
+                    document.getElementById('loginOverlay').classList.add('hidden');
+                    document.getElementById('mainApp').classList.remove('hidden');
+                    document.getElementById('staffNameDisplay').innerText = `Logged in as ${staffCode}`;
+                    loadInitialData();
+                } else {
+                    err.innerText = data.message;
+                    err.classList.remove('hidden');
+                }
+            } catch (e) {
+                err.innerText = "Connection error.";
+                err.classList.remove('hidden');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('adminKey');
+            localStorage.removeItem('staffCode');
+            localStorage.removeItem('globalDept');
+            location.reload();
+        }
+
+        function getHeaders() {
+            return {
+                'Content-Type': 'application/json',
+                'X-Admin-Key': adminKey
+            };
+        }
+
+        function showToast(msg, isError = false) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = `fixed top-4 right-4 px-4 py-2 rounded shadow-lg transition-opacity duration-300 z-50 ${isError ? 'bg-red-600' : 'bg-gray-800'} text-white`;
+            t.style.opacity = '1';
+            setTimeout(() => t.style.opacity = '0', 3000);
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('active', 'bg-blue-100', 'text-blue-700');
+                el.classList.add('text-gray-600');
+            });
+            document.getElementById(tabId + '-tab').classList.add('active');
+
+            const btn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+            btn.classList.add('active', 'bg-blue-100', 'text-blue-700');
+            btn.classList.remove('text-gray-600');
+
+            if (globalDept) {
+                if (tabId === 'sessions') renderSessions();
+                if (tabId === 'departments') loadDepartments();
+                if (tabId === 'students') renderStudents();
+            }
+        }
+
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        // ── DATA LOADING & FILTERING ──────────────────────────────────
+        async function loadInitialData() {
+            try {
+                const [sRes, stRes] = await Promise.all([
+                    fetch(`${API_BASE}/sessions`, { headers: getHeaders() }),
+                    fetch(`${API_BASE}/students`, { headers: getHeaders() })
+                ]);
+
+                if (sRes.status === 401 || stRes.status === 401) return logout();
+
+                await loadDepartments();
+                rawAllSessions = await sRes.json();
+                rawAllStudents = await stRes.json();
+
+                // populateGlobalDepartmentFilter(); // Handled by loadDepartments
+                applyGlobalFilter(false); // don't reload fetches inside just yet
+            } catch (e) { console.error("Error loading initial data", e); }
+        }
+
+        function populateGlobalDepartmentFilter() {
+            const depts = new Set();
+            rawAllSessions.forEach(s => depts.add(s.department));
+            rawAllStudents.forEach(s => depts.add(s.department));
+
+            const sel = document.getElementById('globalDeptSelect');
+            sel.innerHTML = '<option value="all">All Departments</option>';
+            Array.from(depts).sort().forEach(d => {
+                sel.innerHTML += `<option value="${d}" ${d === globalDept ? 'selected' : ''}>${d}</option>`;
+            });
+
+            if (globalDept && !depts.has(globalDept)) {
+                globalDept = '';
+                localStorage.removeItem('globalDept');
+                sel.value = '';
+            }
+        }
+
+
+        function applyGlobalFilter(reloadFetches = true) {
+            const sel = document.getElementById('globalDeptSelect').value;
+            globalDept = sel;
+            localStorage.setItem('globalDept', sel);
+
+            document.getElementById('selectDeptPrompt').classList.add('hidden');
+            document.getElementById('dataContainer').classList.remove('hidden');
+
+            if (sel === 'all' || sel === '') {
+                filteredSessions = rawAllSessions;
+                filteredStudents = rawAllStudents;
+            } else {
+                const gd = globalDept.trim().toUpperCase();
+                filteredSessions = rawAllSessions.filter(s => s.department && s.department.trim().toUpperCase() === gd);
+                filteredStudents = rawAllStudents.filter(s => s.department && s.department.trim().toUpperCase() === gd);
+            }
+
+            updateSessionDropdowns();
+            updateStudentFilters();
+
+            renderSessions();
+            renderStudents();
+
+            if (reloadFetches) {
+                // The clearing is now handled directly by updateSessionDropdowns if the selection becomes invalid!
+            }
+        }
+
+        function updateSessionDropdowns() {
+            const selects = [
+                { id: 'qSessionSelect', loader: loadQuestionsForSession },
+                { id: 'aSessionSelect', loader: loadAssignmentsForSession },
+                { id: 'mSessionSelect', loader: refreshMonitor },
+                { id: 'subSessionSelect', loader: refreshSubmissions },
+                { id: 'mqSession', loader: null },
+                { id: 'bqSession', loader: null },
+                { id: 'maSession', loader: loadQuestionsForMultiAssign }
+            ];
+
+            selects.forEach(obj => {
+                const el = document.getElementById(obj.id);
+                if (!el) return;
+                
+                const oldVal = el.value;
+                el.innerHTML = '<option value="">-- Select Session --</option>';
+                
+                let found = false;
+                filteredSessions.forEach(s => {
+                    el.innerHTML += `<option value="${s.id}">[${s.id}] ${s.title} (${s.status})</option>`;
+                    if (s.id.toString() === oldVal) found = true;
+                });
+                
+                if (found && oldVal) {
+                    el.value = oldVal;
+                    // Auto-trigger the loader so the table doesn't disappear if still valid
+                    if (obj.loader) obj.loader(oldVal);
+                } else if (obj.loader) {
+                    // Clear the table if the previously selected session was filtered out
+                    obj.loader('');
+                }
+            });
+        }
+
+        function updateStudentFilters() {
+            const secs = new Set(filteredStudents.map(s => s.section));
+            const sSelect = document.getElementById('filterSec');
+            sSelect.innerHTML = '<option value="all">All Sections</option>';
+            Array.from(secs).sort().forEach(s => sSelect.innerHTML += `<option value="${s}">${s}</option>`);
+
+            // Populate Multi-Assign dropdown
+            const maList = document.getElementById('maStudents');
+            maList.innerHTML = '';
+            filteredStudents.forEach(s => maList.innerHTML += `<option value="${s.registration_number}">${s.registration_number} - ${s.name} (${s.section})</option>`);
+        }
+
+
+        let allDepts = [];
+
+        // ── DEPARTMENTS ───────────────────────────────────────────────
+        async function loadDepartments() {
+            try {
+                const res = await fetch(`${API_BASE}/departments`, { headers: getHeaders() });
+                allDepts = await res.json();
+
+                const list = document.getElementById('deptsList');
+                if (!list) return;
+                list.innerHTML = '';
+                allDepts.forEach(d => {
+                    list.innerHTML += `
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4">${d.id}</td>
+                            <td class="px-6 py-4 font-medium text-gray-800">${d.name}</td>
+                            <td class="px-6 py-4 font-mono">${d.code}</td>
+                            <td class="px-6 py-4 text-right">
+                                <button onclick="deleteDepartment(${d.id})" class="text-red-600 hover:text-red-900 text-xs font-bold border border-red-200 bg-red-50 px-2 py-1 rounded shadow-sm">Delete</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                // Populate global selector and modals
+                const sel = document.getElementById('globalDeptSelect');
+                sel.innerHTML = '<option value="all">All Departments</option>';
+                allDepts.forEach(d => {
+                    sel.innerHTML += `<option value="${d.code}" ${d.code === globalDept ? 'selected' : ''}>${d.code} - ${d.name}</option>`;
+                });
+
+                const sDept = document.getElementById('sDept');
+                const stDept = document.getElementById('stDept');
+                if (sDept && sDept.tagName === 'SELECT') {
+                    sDept.innerHTML = '';
+                    stDept.innerHTML = '';
+                    allDepts.forEach(d => {
+                        sDept.innerHTML += `<option value="${d.code}">${d.code}</option>`;
+                        stDept.innerHTML += `<option value="${d.code}">${d.code}</option>`;
+                    });
+                } else if (sDept && sDept.tagName === 'INPUT') {
+                    // Convert to selects
+                    sDept.outerHTML = `<select id="sDept" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">${allDepts.map(d => `<option value="${d.code}">${d.code}</option>`).join('')}</select>`;
+                    stDept.outerHTML = `<select id="stDept" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">${allDepts.map(d => `<option value="${d.code}">${d.code}</option>`).join('')}</select>`;
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function createDepartment() {
+            const payload = {
+                name: document.getElementById('dName').value,
+                code: document.getElementById('dCode').value.toUpperCase()
+            };
+            const res = await fetch(`${API_BASE}/department`, {
+                method: 'POST', headers: getHeaders(), body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                closeModal('deptModal');
+                showToast("Department created");
+                await loadDepartments();
+                await loadInitialData();
+            } else showToast("Failed to create", true);
+        }
+
+        async function deleteDepartment(id) {
+            if (!confirm('Delete this department?')) return;
+            const res = await fetch(`${API_BASE}/department/${id}`, { method: 'DELETE', headers: getHeaders() });
+            if (res.ok) {
+                showToast("Department deleted");
+                await loadDepartments();
+                await loadInitialData();
+            } else showToast("Failed to delete", true);
+        }
+
+        // ── SESSIONS ──────────────────────────────────────────────────
+
+
+
+        setInterval(() => {
+            // Table countdowns
+            document.querySelectorAll('.session-countdown').forEach(el => {
+                const endStr = el.getAttribute('data-end');
+                if (!endStr) return;
+                const end = new Date(endStr).getTime();
+                const now = new Date().getTime();
+                const diff = end - now;
+                if (diff <= 0) {
+                    el.innerHTML = '<span class="text-red-600 font-bold">Expired</span>';
+                } else {
+                    const h = Math.floor(diff / (1000 * 60 * 60));
+                    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                    const s = Math.floor((diff % (1000 * 60)) / 1000);
+                    el.innerHTML = `<span class="text-green-600 font-bold font-mono text-sm">${h}h ${m}m ${s}s left</span>`;
+                }
+            });
+
+            // Top bar countdown
+            const activeSession = filteredSessions.find(s => s.status === 'active' && s.end_time);
+            const topDiv = document.getElementById('topActiveSession');
+            const topCount = document.getElementById('topCountdown');
+            if (activeSession) {
+                const end = new Date(activeSession.end_time).getTime();
+                const diff = end - new Date().getTime();
+                topDiv.classList.remove('hidden');
+                if (diff <= 0) {
+                    topCount.innerText = 'EXPIRED';
+                } else {
+                    const h = Math.floor(diff / (1000 * 60 * 60));
+                    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+                    const s = Math.floor((diff % (1000 * 60)) / 1000).toString().padStart(2, '0');
+                    topCount.innerText = `${h}:${m}:${s}`;
+                }
+            } else {
+                if (topDiv) topDiv.classList.add('hidden');
+            }
+        }, 1000);
+
+
+        function renderSessions() {
+
+            const list = document.getElementById('sessionsList');
+            list.innerHTML = '';
+
+            if (filteredSessions.length === 0) {
+                list.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-gray-500">No sessions found for department ${globalDept}.</td></tr>`;
+                return;
+            }
+
+            filteredSessions.forEach(s => {
+
+                const statusColor = s.status === 'active' ? 'bg-green-100 text-green-800' : (s.status === 'draft' ? 'bg-gray-100 text-gray-800' : 'bg-red-100 text-red-800');
+                const timeStr = s.start_time ? new Date(s.start_time).toLocaleString() : 'Not Set';
+                const endStr = s.end_time ? `<br>Ends: ${new Date(s.end_time).toLocaleTimeString()}` : '';
+                const activeTimer = s.status === 'active' && s.end_time ? `<br><div class="session-countdown mt-1" data-end="${s.end_time}"></div>` : '';
+
+                list.innerHTML += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4">${s.id}</td>
+                        <td class="px-6 py-4 font-medium text-gray-900">${s.title}</td>
+                        <td class="px-6 py-4">${s.department}</td>
+                        <td class="px-6 py-4 text-xs text-gray-500">${timeStr}${endStr}${activeTimer}<br><span class="font-bold">${s.duration_minutes}m</span> limit</td>
+                        <td class="px-6 py-4"><span class="px-2 py-1 rounded-full text-xs font-semibold ${statusColor}">${s.status}</span></td>
+
+                        <td class="px-6 py-4 text-right space-x-2">
+                            ${s.status === 'draft' ? `<button onclick="updateSessionStatus(${s.id}, 'active')" class="text-green-600 hover:text-green-900 text-xs font-bold border border-green-200 bg-green-50 px-2 py-1 rounded shadow-sm">Activate</button>` : ''}
+                            ${s.status === 'active' ? `<button onclick="updateSessionStatus(${s.id}, 'closed')" class="text-red-600 hover:text-red-900 text-xs font-bold border border-red-200 bg-red-50 px-2 py-1 rounded shadow-sm">Close Exam</button>` : ''}
+                            <button onclick="deleteSession(${s.id})" class="text-red-600 hover:text-red-900 text-xs font-bold border border-red-200 bg-red-50 px-2 py-1 rounded shadow-sm">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function createSession() {
+            const d = document.getElementById('sDept').value || globalDept;
+            const payload = {
+                title: document.getElementById('sTitle').value,
+                department: d,
+                language: document.getElementById('sLang').value,
+                duration_minutes: parseInt(document.getElementById('sMins').value),
+            };
+            const start = document.getElementById('sStart').value;
+            const end = document.getElementById('sEnd').value;
+            if (start) payload.start_time = new Date(start).toISOString();
+            if (end) payload.end_time = new Date(end).toISOString();
+
+            const res = await fetch(`${API_BASE}/session`, {
+                method: 'POST', headers: getHeaders(), body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                closeModal('sessionModal');
+                showToast("Session created");
+                await loadInitialData();
+            } else showToast("Failed to create session", true);
+        }
+
+        async function updateSessionStatus(id, status) {
+            if (status === 'closed' && !confirm('Are you sure you want to close this exam session?')) return;
+            await fetch(`${API_BASE}/session/${id}/status`, {
+                method: 'PUT', headers: getHeaders(), body: JSON.stringify({ status })
+            });
+            showToast(`Session marked as ${status}`);
+            await loadInitialData();
+        }
+
+        async function deleteSession(id) {
+            if (!confirm("Permanently delete this session and all its questions/assignments?")) return;
+            const res = await fetch(`${API_BASE}/session/${id}`, { method: 'DELETE', headers: getHeaders() });
+            if (res.ok) {
+                showToast("Session deleted");
+                loadSessions();
+            } else {
+                showToast("Failed to delete session", true);
+            }
+        }
+
+        // ── STUDENTS ──────────────────────────────────────────────────
+        function renderStudents() {
+            const list = document.getElementById('studentsList');
+            const sFilter = document.getElementById('filterSec').value;
+
+            list.innerHTML = '';
+            const toShow = filteredStudents.filter(s => sFilter === 'all' || s.section === sFilter);
+
+            if (toShow.length === 0) {
+                list.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-gray-500">No students found for department ${globalDept}.</td></tr>`;
+                return;
+            }
+
+            toShow.forEach(s => {
+                const isPendingDel = pendingDeletions[s.registration_number];
+                const rowClass = isPendingDel ? "bg-red-50 opacity-50 pointer-events-none" : "hover:bg-gray-50";
+
+                list.innerHTML += `
+                    <tr class="${rowClass}">
+                        <td class="px-6 py-4 font-mono text-sm">${s.registration_number}</td>
+                        <td class="px-6 py-4 font-medium">${s.name}</td>
+                        <td class="px-6 py-4">${s.department}</td>
+                        <td class="px-6 py-4">${s.section}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 rounded-full text-xs font-semibold ${s.enabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">${s.enabled ? 'Enabled' : 'Disabled'}</span>
+                        </td>
+                        <td class="px-6 py-4 text-right space-x-3">
+                            <button onclick="toggleStudent('${s.registration_number}', ${!s.enabled})" class="text-blue-600 hover:text-blue-900 text-xs">Toggle</button>
+                            <button onclick="triggerDelete('${s.registration_number}')" class="text-red-600 hover:text-red-900 text-xs font-bold">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function createStudent() {
+            const res = await fetch(`${API_BASE}/student`, {
+                method: 'POST', headers: getHeaders(),
+                body: JSON.stringify({
+                    registration_number: document.getElementById('stReg').value.toUpperCase(),
+                    name: document.getElementById('stName').value,
+                    department: document.getElementById('stDept').value || globalDept,
+                    batch: document.getElementById('stBatch').value,
+                    year: document.getElementById('stYear').value,
+                    section: document.getElementById('stSec').value.toUpperCase()
+                })
+            });
+            if (res.ok) { closeModal('studentModal'); showToast("Student added"); await loadInitialData(); }
+            else showToast("Failed to add", true);
+        }
+
+        async function toggleStudent(reg, state) {
+            await fetch(`${API_BASE}/student/${reg}/${state ? 'enable' : 'disable'}`, { method: 'PUT', headers: getHeaders() });
+            await loadInitialData();
+        }
+
+        function triggerDelete(reg) {
+            if (pendingDeletions[reg]) return;
+            const container = document.getElementById('undoContainer');
+
+            const toast = document.createElement('div');
+            toast.className = 'undo-toast bg-gray-900 text-white px-4 py-3 rounded-lg shadow-xl flex items-center space-x-4 border border-gray-700';
+            toast.id = `undo-${reg}`;
+            toast.innerHTML = `
+                <div class="text-sm">Deleting <b>${reg}</b> in <span id="timer-${reg}" class="font-bold text-red-400">5</span>s</div>
+                <button class="bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-xs font-bold text-white transition">UNDO</button>
+            `;
+            container.appendChild(toast);
+
+            let timeLeft = 5;
+            const timerEl = document.getElementById(`timer-${reg}`);
+
+            const countdown = setInterval(() => {
+                timeLeft--;
+                timerEl.innerText = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(countdown);
+                    commitDelete(reg, toast);
+                }
+            }, 1000);
+
+
+            toast.querySelector('button').onclick = () => {
+                clearInterval(countdown);
+                delete pendingDeletions[reg];
+                toast.remove();
+                renderStudents();
+            };
+
+            pendingDeletions[reg] = countdown;
+            renderStudents();
+        }
+
+        async function commitDelete(reg, toastEl) {
+            try {
+                await fetch(`${API_BASE}/student/${reg}`, { method: 'DELETE', headers: getHeaders() });
+                toastEl.remove();
+                delete pendingDeletions[reg];
+                showToast(`Student ${reg} deleted permanently.`);
+                await loadInitialData();
+            } catch (e) {
+                toastEl.remove();
+                delete pendingDeletions[reg];
+                showToast(`Failed to delete ${reg}`, true);
+            }
+        }
+
+
+        // ── QUESTIONS ──────────────────────────────────────────────────
+        async function loadQuestionsForSession(sid) {
+            const list = document.getElementById('questionsList');
+            if (!sid) return list.innerHTML = '';
+            const res = await fetch(`${API_BASE}/session/${sid}/questions`, { headers: getHeaders() });
+            const data = await res.json();
+            list.innerHTML = '';
+            if (data.length === 0) return list.innerHTML = '<p class="text-gray-500">No questions for this session.</p>';
+            data.forEach(q => {
+                list.innerHTML += `
+                    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex justify-between items-start">
+                        <div>
+                            <h4 class="font-bold text-gray-800">${q.title}</h4>
+                            <p class="text-sm text-gray-600 mt-1">${q.statement}</p>
+                            ${q.test_case_count > 0 ? `<div class="mt-2 text-xs bg-green-50 text-green-700 px-2 py-1 inline-block rounded border border-green-100">${q.test_case_count} Test Cases Added</div>` : ''}
+                        </div>
+                        <div class="flex flex-col space-y-2 items-end">
+                            <span class="text-xs bg-blue-100 text-blue-800 font-bold px-2 py-1 rounded uppercase">${q.language}</span>
+                            <button onclick="deleteQuestion(${q.id})" class="text-red-600 hover:text-red-900 text-xs font-bold border border-red-200 bg-red-50 px-2 py-1 rounded shadow-sm">Delete</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        async function loadQuestionsForMultiAssign(sid) {
+            const mq = document.getElementById('maQuestion');
+            mq.innerHTML = '<option value="">Loading...</option>';
+            if (!sid) return;
+            const res = await fetch(`${API_BASE}/session/${sid}/questions`, { headers: getHeaders() });
+            const data = await res.json();
+            mq.innerHTML = '';
+            data.forEach(q => mq.innerHTML += `<option value="${q.id}">${q.title}</option>`);
+        }
+
+        async function createQuestion() {
+            const sid = document.getElementById('mqSession').value;
+            if (!sid) return showToast("Select session first", true);
+            const payload = {
+                session_id: parseInt(sid),
+                title: document.getElementById('qTitle').value,
+                statement: document.getElementById('qStmt').value,
+                starter_code: document.getElementById('qStarter').value
+            };
+            const res = await fetch(`${API_BASE}/question`, {
+                method: 'POST', headers: getHeaders(), body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                closeModal('questionModal');
+                loadQuestionsForSession(document.getElementById('qSessionSelect').value);
+                showToast("Question Added");
+            }
+        }
+
+        async function deleteQuestion(id) {
+            if (!confirm("Permanently delete this question?")) return;
+            const res = await fetch(`${API_BASE}/question/${id}`, { method: 'DELETE', headers: getHeaders() });
+            if (res.ok) {
+                showToast("Question deleted");
+                loadQuestionsForSession(document.getElementById('qSessionSelect').value);
+            } else {
+                showToast("Failed to delete question", true);
+            }
+        }
+
+        // Simple CSV parser for frontend
+        function parseCsv(text) {
+            const rows = [];
+            let inQuotes = false;
+            let col = '';
+            let row = [];
+            
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                if (char === '"') {
+                    if (inQuotes && text[i+1] === '"') {
+                        col += '"';
+                        i++; // skip escaped quote
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if ((char === ',' && !inQuotes)) {
+                    row.push(col.trim());
+                    col = '';
+                } else if ((char === '\n' || char === '\r') && !inQuotes) {
+                    if (char === '\r' && text[i+1] === '\n') i++; // skip \n of \r\n
+                    row.push(col.trim());
+                    if (row.some(cell => cell !== '')) rows.push(row);
+                    row = [];
+                    col = '';
+                } else {
+                    col += char;
+                }
+            }
+            if (col || row.length > 0) {
+                row.push(col.trim());
+                if (row.some(cell => cell !== '')) rows.push(row);
+            }
+            return rows;
+        }
+
+        async function submitBulkQuestionsCsv() {
+            const sid = document.getElementById('bqSession').value;
+            const fileInput = document.getElementById('bqFile');
+
+            if (!sid) return showToast("Select a session", true);
+            if (!fileInput.files.length) return showToast("Select a CSV file", true);
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = async function (e) {
+                try {
+                    const rows = parseCsv(e.target.result);
+                    if (rows.length < 2) return showToast("CSV must have a header and at least one row", true);
+
+                    const header = rows[0].map(h => h.toLowerCase().trim());
+
+                    const questionsArray = [];
+                    for (let i = 1; i < rows.length; i++) {
+                        const row = rows[i];
+                        const q = { session_id: parseInt(sid), visible_examples: [], test_cases: [], language: 'python', constraints: [] };
+
+                        let testCaseCount = 0;
+                        for (let j = 0; j < header.length; j++) {
+                            const colName = header[j];
+                            const val = row[j] || '';
+
+                            if (colName === 'title') q.title = val;
+                            else if (colName === 'statement') q.statement = val;
+                            else if (colName === 'starter_code') q.starter_code = val;
+                            else if (colName.startsWith('ex') && colName.endsWith('_input')) {
+                                const idx = colName.match(/\d+/)[0];
+                                const outIdx = header.indexOf(`ex${idx}_output`);
+                                if (outIdx !== -1 && row[outIdx]) {
+                                    q.visible_examples.push({ input: val, output: row[outIdx] });
+                                }
+                            } else if (colName.startsWith('test') && colName.endsWith('_input')) {
+                                const idx = colName.match(/\d+/)[0];
+                                const outIdx = header.indexOf(`test${idx}_output`);
+                                const marksIdx = header.indexOf(`test${idx}_marks`);
+                                if (outIdx !== -1 && row[outIdx]) {
+                                    q.test_cases.push({
+                                        input: val,
+                                        output: row[outIdx],
+                                        marks: marksIdx !== -1 && row[marksIdx] ? parseInt(row[marksIdx]) : 10
+                                    });
+                                }
+                            }
+                        }
+                        if (q.title && q.statement) questionsArray.push(q);
+                    }
+
+                    if (questionsArray.length === 0) return showToast("No valid questions found in CSV", true);
+
+                    const res = await fetch(`${API_BASE}/questions/bulk`, {
+                        method: 'POST',
+                        headers: getHeaders(),
+                        body: JSON.stringify({ session_id: parseInt(sid), questions: questionsArray })
+                    });
+
+                    const data = await res.json();
+                    if (res.ok) {
+                        showToast(`Uploaded! Created: ${data.created}, Skipped: ${data.skipped}`);
+                        if (data.errors && data.errors.length > 0) {
+                            showToast(`${data.errors.length} errors occurred. Check console.`, true);
+                        }
+                        closeModal('bulkQuestionModal');
+                        loadQuestionsForSession(sid);
+                    } else {
+                        showToast(data.detail || "Failed to upload bulk questions", true);
+                    }
+                } catch (err) {
+                    showToast("Failed to parse CSV file", true);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        async function submitBulkStudentsCsv() {
+            const fileInput = document.getElementById('bsFile');
+            if (!fileInput.files.length) return showToast("Select a CSV file", true);
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = async function (e) {
+                try {
+                    const rows = parseCsv(e.target.result);
+                    if (rows.length < 2) return showToast("CSV must have a header and at least one row", true);
+
+                    const header = rows[0].map(h => h.toLowerCase().trim());
+                    // expected format: department, section, register number, name, year
+
+                    const deptIdx = header.findIndex(h => h.includes('dept') || h.includes('department'));
+                    const secIdx = header.findIndex(h => h.includes('sec') || h.includes('section'));
+                    const regIdx = header.findIndex(h => h.includes('reg') || h.includes('register'));
+                    const nameIdx = header.findIndex(h => h.includes('name'));
+                    const yearIdx = header.findIndex(h => h.includes('year'));
+
+                    if (deptIdx === -1 || secIdx === -1 || regIdx === -1 || nameIdx === -1 || yearIdx === -1) {
+                        return showToast("CSV missing required columns (department, section, register number, name, year)", true);
+                    }
+
+                    const studentsArray = [];
+                    for (let i = 1; i < rows.length; i++) {
+                        const row = rows[i];
+                        if (row.length < 5) continue;
+                        studentsArray.push({
+                            department: row[deptIdx],
+                            section: row[secIdx].toUpperCase(),
+                            registration_number: row[regIdx].toUpperCase(),
+                            name: row[nameIdx],
+                            year: row[yearIdx],
+                            batch: "2026" // Default batch for now
+                        });
+                    }
+
+                    if (studentsArray.length === 0) return showToast("No valid students found in CSV", true);
+
+                    const res = await fetch(`${API_BASE}/students/bulk`, {
+                        method: 'POST',
+                        headers: getHeaders(),
+                        body: JSON.stringify({ students: studentsArray })
+                    });
+
+                    const data = await res.json();
+                    if (res.ok) {
+                        showToast(`Uploaded! Created: ${data.created}, Skipped: ${data.skipped}`);
+                        if (data.errors && data.errors.length > 0) {
+                            showToast(`${data.errors.length} errors occurred. Check console.`, true);
+                        }
+                        closeModal('bulkStudentModal');
+                        loadInitialData();
+                    } else {
+                        showToast(data.detail || "Failed to upload bulk students", true);
+                    }
+                } catch (err) {
+                    showToast("Failed to parse CSV file", true);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // ── ASSIGNMENTS ───────────────────────────────────────────────
+        async function loadAssignmentsForSession(sid) {
+            const list = document.getElementById('assignmentsList');
+            if (!sid) return list.innerHTML = '';
+            const res = await fetch(`${API_BASE}/session/${sid}/assignments`, { headers: getHeaders() });
+            const data = await res.json();
+            list.innerHTML = '';
+            if (data.length === 0) return list.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-gray-500">No assignments in this session.</td></tr>';
+            data.forEach(a => {
+                list.innerHTML += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 font-medium text-gray-800">${a.student_name} <span class="text-xs text-gray-500 block font-mono">${a.student_registration} | ${a.student_department}, ${a.student_year} Year, Sec ${a.student_section}</span></td>
+                        <td class="px-6 py-4 text-blue-700">${a.question_title}</td>
+                        <td class="px-6 py-4 text-xs text-gray-500">${new Date(a.assigned_at).toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function loadQuestionsForMultiAssign(sid) {
+            const qSelect = document.getElementById('maQuestion');
+            if (!sid) {
+                qSelect.innerHTML = '<option value="">-- Auto Round Robin All Questions --</option>';
+                return;
+            }
+            const res = await fetch(`${API_BASE}/session/${sid}/questions`, { headers: getHeaders() });
+            const data = await res.json();
+            qSelect.innerHTML = '<option value="">-- Auto Round Robin All Questions --</option>';
+            data.forEach(q => qSelect.innerHTML += `<option value="${q.id}">${q.title}</option>`);
+        }
+
+        async function submitMultiAssign() {
+            const sid = document.getElementById('maSession').value;
+            const qid = document.getElementById('maQuestion').value;
+            const year = document.getElementById('maYear').value;
+            const sec = document.getElementById('maSec').value.trim().toUpperCase();
+
+            if (!sid) return showToast("Select Session", true);
+
+            const payload = {
+                session_id: parseInt(sid),
+                year: year === 'all' ? null : year,
+                section: sec === '' ? null : sec
+            };
+
+            if (qid) {
+                payload.question_id = parseInt(qid);
+            }
+
+            const res = await fetch(`${API_BASE}/assignment/bulk`, {
+                method: 'POST', headers: getHeaders(), body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                closeModal('assignmentModal');
+                showToast(data.message || "Assignment complete");
+                if (document.getElementById('aSessionSelect').value === sid) {
+                    loadAssignmentsForSession(sid);
+                }
+            } else {
+                showToast(data.detail || "Assignment failed", true);
+            }
+        }
+
+        // ── MONITOR ───────────────────────────────────────────────────
+        async function refreshMonitor() {
+            const sid = document.getElementById('mSessionSelect').value;
+            const grid = document.getElementById('monitorGrid');
+            if (!sid) return grid.innerHTML = '';
+
+            const res = await fetch(`${API_BASE}/session/${sid}/monitor`, { headers: getHeaders() });
+            const data = await res.json();
+
+            document.getElementById('mTotalCount').innerText = data.total_students;
+            document.getElementById('mOnlineCount').innerText = data.online_students;
+
+            grid.innerHTML = '';
+            if (data.students.length === 0) return grid.innerHTML = '<p class="text-gray-500 col-span-3">No students assigned to this session.</p>';
+            data.students.forEach(s => {
+                const color = s.is_online ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200';
+                const dot = s.is_online ? 'bg-green-500 animate-pulse' : 'bg-gray-300';
+                const subBadge = s.has_submitted ? `<span class="px-2 py-1 bg-purple-100 text-purple-800 text-[10px] font-bold rounded uppercase ml-2 border border-purple-200">Submitted</span>` : '';
+                grid.innerHTML += `
+                    <div class="${color} border p-4 rounded-xl shadow-sm transition">
+                        <div class="flex justify-between items-start">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-3 h-3 rounded-full ${dot} shadow-sm"></div>
+                                <div>
+                                    <div class="font-bold text-gray-800 text-sm flex items-center">${s.name} ${subBadge}</div>
+                                    <div class="text-xs text-gray-500 font-mono">${s.registration_number} | ${s.year} Year, Sec ${s.section}</div>
+                                </div>
+                            </div>
+                            <div class="text-right text-[10px] text-gray-500">
+                                Run Count: <b class="text-gray-800">${s.run_count}</b><br>
+                                IP: ${s.machine_ip || '---'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // ── SUBMISSIONS ───────────────────────────────────────────────
+        let lastSubmissions = [];
+        async function refreshSubmissions() {
+            const sid = document.getElementById('subSessionSelect').value;
+            const list = document.getElementById('submissionsList');
+            if (!sid) return list.innerHTML = '';
+
+            const res = await fetch(`${API_BASE}/session/${sid}/submissions`, { headers: getHeaders() });
+            const data = await res.json();
+            lastSubmissions = data;
+
+            list.innerHTML = '';
+            if (data.length === 0) return list.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No submissions yet.</td></tr>';
+
+            data.forEach(s => {
+                let typeColor = 'bg-gray-100 text-gray-800 border-gray-200';
+                if (s.submission_type === 'auto_tab_switch') typeColor = 'bg-red-100 text-red-800 border-red-200';
+                if (s.submission_type === 'auto_timer') typeColor = 'bg-yellow-100 text-yellow-800 border-yellow-200';
+                if (s.submission_type === 'resubmission') typeColor = 'bg-blue-100 text-blue-800 border-blue-200';
+
+                list.innerHTML += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 font-medium text-gray-800">${s.student_name} <span class="text-xs text-gray-500 block font-mono">${s.registration_number} | ${s.student_department}, ${s.student_year} Year, Sec ${s.student_section}</span></td>
+                        <td class="px-6 py-4 text-blue-700 text-sm font-medium">${s.question_title}</td>
+                        <td class="px-6 py-4"><span class="px-2 py-1 border rounded text-[10px] uppercase font-bold ${typeColor}">${s.submission_type.replace(/_/g, ' ')}</span></td>
+                        <td class="px-6 py-4 font-bold text-center text-gray-600">${s.submit_count}</td>
+                        <td class="px-6 py-4 text-xs text-gray-500">${new Date(s.submitted_at).toLocaleString()}</td>
+                        <td class="px-6 py-4"><button onclick="viewCode(${s.id})" class="bg-gray-800 text-white hover:bg-black px-3 py-1 rounded text-xs font-bold transition">View Code</button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function viewCode(id) {
+            const s = lastSubmissions.find(x => x.id === id);
+            if (!s) return;
+            document.getElementById('codeViewContent').innerText = s.source_code || '# No code';
+            openModal('codeModal');
+        }
+
+    </script>
+</body>
+
+</html>

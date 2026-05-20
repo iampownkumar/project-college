@@ -1,0 +1,65 @@
+# ============================================================
+# File: .gitignore (root)
+# Project: Koreliurm Lab Exam System
+# ============================================================
+
+# ── Python ────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+*.spec
+
+# ── Virtual environments ───────────────────────────────────
+venv/
+.venv/
+env/
+
+# ── Environment / secrets (NEVER commit) ──────────────────
+.env
+*.env
+.env.*
+
+# ── Database files ─────────────────────────────────────────
+*.db
+*.db-shm
+*.db-wal
+
+# ── Logs ──────────────────────────────────────────────────
+logs/
+*.log
+
+# ── One-off migration / fix scripts ───────────────────────
+lab-exam-server/fix_db.py
+lab-exam-server/generate_csvs.py
+lab-exam-server/migrate_*.py
+
+# ── Pytest ────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ── Git backup folders ────────────────────────────────────
+.git_backup/
+
+# ── Flutter / Dart ────────────────────────────────────────
+lab-exam-client/.dart_tool/
+lab-exam-client/build/
+lab-exam-client/.flutter-plugins
+lab-exam-client/.flutter-plugins-dependencies
+lab-exam-client/*.iml
+lab-exam-client/.packages
+
+# ── IDE ───────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ── macOS ─────────────────────────────────────────────────
+.DS_Store
+**/.DS_Store

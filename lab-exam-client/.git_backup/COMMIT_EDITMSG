@@ -1,0 +1,7 @@
+feat: submission_type tracking in ExamProvider
+
+- _autoSubmitOnExpiry now takes a submission_type string
+- Normal submit button sends 'normal'
+- Timer expiration sends 'auto_timer'
+- 3-strike tab switch lock sends 'auto_tab_switch'
+- Fully aligns with new backend tracking for rich monitoring

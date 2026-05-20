@@ -1,0 +1,48 @@
+# ============================================================
+# File: .gitignore
+# Project: Local Lab Exam System - Coordinator Server
+# Author: Pownkumar A (Founder of Koreliurm)
+# Created: 2026-05-15
+# Last Updated: 2026-05-15
+# ============================================================
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+*.spec
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Environment files (never commit real .env)
+.env
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+
+# Logs
+logs/
+
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# macOS
+.DS_Store

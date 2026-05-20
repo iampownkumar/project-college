@@ -1,0 +1,19 @@
+{
+  "server": {
+    "base_url": "http://127.0.0.1:8000/api/v1",
+    "heartbeat_interval_seconds": 15
+  },
+  "python": {
+    "executable_path": "./runtime/python/python.exe",
+    "runner_script": "./runtime/runner/execute_student_code.py",
+    "timeout_seconds": 30
+  },
+  "exam": {
+    "autosave_interval_seconds": 15,
+    "fullscreen": true,
+    "default_duration_minutes": 120
+  },
+  "client": {
+    "version": "1.0.0"
+  }
+}

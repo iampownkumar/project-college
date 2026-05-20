@@ -1,0 +1,21 @@
+{
+  "id": "py_q1",
+  "language": "python",
+  "title": "Print Hello Lab",
+  "statement": "Write a Python program that prints the text 'Hello Lab' to the standard output.",
+  "starter_code": "# Write your solution below\nprint('Hello Lab')",
+  "visible_examples": [
+    {
+      "input": "",
+      "output": "Hello Lab"
+    }
+  ],
+  "constraints": [
+    "Use Python only",
+    "Do not use any external libraries"
+  ],
+  "metadata": {
+    "difficulty": "easy",
+    "marks": 10
+  }
+}
