@@ -32,6 +32,8 @@ class HeartbeatService:
         """
         Validate and upsert a heartbeat record.
         Returns SuccessResponse or ErrorResponse.
+        If the session has expired/been closed, returns session_closed=True
+        so the client can force-logout the student.
         """
         student = self.student_repo.get_by_registration(payload.registration_number)
         if not student or not student.enabled:
@@ -51,12 +53,19 @@ class HeartbeatService:
             client_state=payload.client_state,
         )
 
+        # Check if the session is still active (get_active auto-closes expired ones)
+        active = self.session_repo.get_active()
+        session_closed = (active is None or active.id != payload.session_id)
+
         logger.debug(
             f"Heartbeat recorded: reg={payload.registration_number} "
-            f"state={payload.client_state}"
+            f"state={payload.client_state} session_closed={session_closed}"
         )
+
+        hb_out = HeartbeatOut.model_validate(hb)
+        hb_out.session_closed = session_closed
 
         return SuccessResponse(
             message="Heartbeat recorded.",
-            data=HeartbeatOut.model_validate(hb),
+            data=hb_out,
         )

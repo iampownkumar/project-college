@@ -63,6 +63,7 @@ class ExamProvider extends ChangeNotifier {
     required this.student,
     required this.session,
     required this.assignment,
+    this.onSessionExpired,
     ApiService? api,
     PythonRunnerService? runner,
     AutosaveService? autosave,
@@ -73,6 +74,10 @@ class ExamProvider extends ChangeNotifier {
               intervalSeconds:
                   ConfigLoader.instance.exam.autosaveIntervalSeconds,
             );
+
+  /// Called when the server reports that the session has been closed/expired.
+  /// Wire this to Navigator.pop → login in ExamScreen.
+  final VoidCallback? onSessionExpired;
 
   // ── State ─────────────────────────────────────────────────
   ExamStatus _status = ExamStatus.loading;
@@ -369,7 +374,7 @@ class ExamProvider extends ChangeNotifier {
     if (_disposed) return;
     try {
       final ip = await MachineInfo.getMachineIp();
-      await _api.postHeartbeat({
+      final resp = await _api.postHeartbeat({
         'registration_number': student.registrationNumber,
         'session_id': session.id,
         'machine_name': MachineInfo.machineName,
@@ -378,10 +383,38 @@ class ExamProvider extends ChangeNotifier {
         'timestamp': DateTime.now().toUtc().toIso8601String(),
       });
       _serverOnline = true;
+
+      // Check if the server says the session is closed/expired
+      if (resp != null) {
+        final data = resp['data'] as Map<String, dynamic>?;
+        final closed = data?['session_closed'] as bool? ?? false;
+        if (closed && !_disposed) {
+          // Auto-submit first, then logout
+          if (!_submitted) await _autoSubmitAndLogout();
+          return;
+        }
+      }
     } catch (_) {
       _serverOnline = false;
     }
     if (!_disposed) notifyListeners();
+  }
+
+  Future<void> _autoSubmitAndLogout() async {
+    // Submit whatever code exists silently
+    try {
+      await _api.postSubmission({
+        'registration_number': student.registrationNumber,
+        'session_id': session.id,
+        'question_id': assignment.questionId,
+        'source_code': _currentCode,
+        'language': 'python',
+        'submission_type': 'auto',
+      });
+    } catch (_) {}
+    _submitted = true;
+    // Fire the callback — ExamScreen pops to login
+    onSessionExpired?.call();
   }
 
   // ── Autosave ──────────────────────────────────────────────

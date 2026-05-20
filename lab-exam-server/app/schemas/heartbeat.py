@@ -32,5 +32,7 @@ class HeartbeatOut(BaseModel):
     machine_ip: Optional[str] = None
     client_state: Optional[str] = None
     last_seen_at: Optional[datetime] = None
+    # True when the session has been closed/expired — client must logout
+    session_closed: bool = False
 
     model_config = {"from_attributes": True}

@@ -23,12 +23,28 @@ class SessionRepository:
         return self.db.query(ExamSession).filter(ExamSession.id == session_id).first()
 
     def get_active(self) -> Optional[ExamSession]:
-        """Return the first active session (MVP assumes at most one active)."""
-        return (
+        """Return the first active session (MVP assumes at most one active).
+        If the session's end_time has passed it is automatically closed here
+        so callers never see a stale 'active' session."""
+        from datetime import datetime, timezone
+        session = (
             self.db.query(ExamSession)
             .filter(ExamSession.status == SessionStatus.active)
             .first()
         )
+        if session and session.end_time:
+            now = datetime.now(timezone.utc)
+            # Normalise to UTC if end_time is naive (stored without tz)
+            end = session.end_time
+            if end.tzinfo is None:
+                from datetime import timezone as tz
+                end = end.replace(tzinfo=tz.utc)
+            if now >= end:
+                session.status = SessionStatus.closed
+                self.db.commit()
+                self.db.refresh(session)
+                return None   # Caller sees no active session
+        return session
 
     def get_all(self) -> List[ExamSession]:
         return self.db.query(ExamSession).all()

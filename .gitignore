@@ -38,6 +38,9 @@ lab-exam-server/fix_db.py
 lab-exam-server/generate_csvs.py
 lab-exam-server/migrate_*.py
 
+# ── Bundled Python runtime (generated per-machine) ────────
+lab-exam-client/runtime/venv/
+
 # ── Pytest ────────────────────────────────────────────────
 .pytest_cache/
 .coverage

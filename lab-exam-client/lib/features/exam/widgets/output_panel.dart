@@ -47,8 +47,10 @@ class _OutputPanelState extends State<OutputPanel>
     final isDark = theme.brightness == Brightness.dark;
 
     final bgColor = isDark ? const Color(0xFF11111B) : const Color(0xFFF8FAFC);
-    final consoleBg = isDark ? const Color(0xFF0D0D14) : const Color(0xFFFFFFFF);
-    final textColor = isDark ? const Color(0xFFCDD6F4) : const Color(0xFF1E293B);
+    final consoleBg =
+        isDark ? const Color(0xFF0D0D14) : const Color(0xFFFFFFFF);
+    final textColor =
+        isDark ? const Color(0xFFCDD6F4) : const Color(0xFF1E293B);
 
     final tests = exam.testCaseResults;
     final passCount = tests.where((t) => t.passed).length;
@@ -84,8 +86,8 @@ class _OutputPanelState extends State<OutputPanel>
                   indicatorColor: theme.colorScheme.primary,
                   labelStyle: const TextStyle(
                       fontSize: 12, fontWeight: FontWeight.w600),
-                  unselectedLabelStyle:
-                      const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                  unselectedLabelStyle: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w500),
                   tabs: [
                     Tab(
                       child: Row(
@@ -95,8 +97,10 @@ class _OutputPanelState extends State<OutputPanel>
                           if (exam.isInteractiveRunning) ...[
                             const SizedBox(width: 6),
                             const SizedBox(
-                              width: 8, height: 8,
-                              child: CircularProgressIndicator(strokeWidth: 1.5),
+                              width: 8,
+                              height: 8,
+                              child:
+                                  CircularProgressIndicator(strokeWidth: 1.5),
                             ),
                           ],
                         ],
@@ -110,8 +114,10 @@ class _OutputPanelState extends State<OutputPanel>
                           if (exam.isTestingCases) ...[
                             const SizedBox(width: 6),
                             const SizedBox(
-                              width: 8, height: 8,
-                              child: CircularProgressIndicator(strokeWidth: 1.5),
+                              width: 8,
+                              height: 8,
+                              child:
+                                  CircularProgressIndicator(strokeWidth: 1.5),
                             ),
                           ] else if (tests.isNotEmpty) ...[
                             const SizedBox(width: 6),
@@ -126,7 +132,8 @@ class _OutputPanelState extends State<OutputPanel>
                 if (exam.isInteractiveRunning) ...[
                   _MetaBadge(label: 'RUNNING', color: const Color(0xFF8B5CF6)),
                   const SizedBox(width: 8),
-                ] else if (exam.lastResult != null && exam.consoleLines.isEmpty) ...[
+                ] else if (exam.lastResult != null &&
+                    exam.consoleLines.isEmpty) ...[
                   _MetaBadge(
                     label: 'Exit: ${exam.lastResult!.exitCode}',
                     color: exam.lastResult!.isSuccess
@@ -466,12 +473,10 @@ class _TestCaseCard extends StatelessWidget {
   Widget build(BuildContext context) {
     const passColor = Color(0xFF10B981);
     const failColor = Color(0xFFEF4444);
-    final cardColor = t.passed
-        ? passColor.withOpacity(0.06)
-        : failColor.withOpacity(0.06);
-    final borderColor = t.passed
-        ? passColor.withOpacity(0.25)
-        : failColor.withOpacity(0.25);
+    final cardColor =
+        t.passed ? passColor.withOpacity(0.06) : failColor.withOpacity(0.06);
+    final borderColor =
+        t.passed ? passColor.withOpacity(0.25) : failColor.withOpacity(0.25);
     const mono = TextStyle(fontFamily: 'monospace', fontSize: 12, height: 1.4);
 
     return Container(
@@ -603,7 +608,10 @@ class _OutputSection extends StatelessWidget {
           SelectableText(
             content,
             style: TextStyle(
-                fontFamily: 'monospace', fontSize: 13, color: color, height: 1.5),
+                fontFamily: 'monospace',
+                fontSize: 13,
+                color: color,
+                height: 1.5),
           ),
         ],
       );

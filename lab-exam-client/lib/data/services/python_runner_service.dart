@@ -103,10 +103,58 @@ if __name__ == "__main__":
 ''';
 
 class PythonRunnerService {
-  /// Returns the Python executable path.
-  /// - On Windows production: uses bundled python.exe from config.
-  /// - On macOS/Linux dev:    falls back to system python3.
+  // ── Venv paths ────────────────────────────────────────────────────────────
+  // The bundled venv lives at  <executable dir>/runtime/venv/
+  // On macOS app bundles the executable is inside .app/Contents/MacOS/,
+  // so we also look relative to the parent dirs.
+
+  static String get _venvPython {
+    if (Platform.isWindows) return _venvRoot + r'\Scripts\python.exe';
+    return _venvRoot + '/bin/python3';
+  }
+
+  static String get _venvRoot {
+    // Walk up from the Flutter executable to find runtime/venv
+    final exe = File(Platform.resolvedExecutable);
+    final candidates = [
+      exe.parent,                        // Linux: alongside executable
+      exe.parent.parent,                 // macOS: Contents/ folder
+      exe.parent.parent.parent,          // macOS: .app/
+      exe.parent.parent.parent.parent,   // dev: build/macos/...
+    ];
+    for (final dir in candidates) {
+      final venv = '${dir.path}/runtime/venv';
+      if (Directory(venv).existsSync()) return venv;
+    }
+    // Dev fallback: look relative to CWD (flutter run from project root)
+    return '${Directory.current.path}/runtime/venv';
+  }
+
+  /// Returns true when the bundled venv exists and has a python binary.
+  static bool get isVenvReady => File(_venvPython).existsSync();
+
+  /// Returns the full path to setup_env.sh for display purposes.
+  static String get setupScriptPath {
+    final exe = File(Platform.resolvedExecutable);
+    final candidates = [
+      exe.parent,
+      exe.parent.parent,
+      exe.parent.parent.parent,
+    ];
+    for (final dir in candidates) {
+      final sh = '${dir.path}/runtime/setup_env.sh';
+      if (File(sh).existsSync()) return sh;
+    }
+    return '${Directory.current.path}/runtime/setup_env.sh';
+  }
+
+  // ── Executable resolution ─────────────────────────────────────────────────
+  /// Priority:
+  ///   1. Bundled venv  (runtime/venv/bin/python3)
+  ///   2. Config path   (app_config.json python.executable_path)
+  ///   3. System python (python3 / python on Windows)
   String _resolveExecutable() {
+    if (isVenvReady) return _venvPython;
     final configPath = ConfigLoader.instance.python.executablePath;
     if (File(configPath).existsSync()) return configPath;
     return Platform.isWindows ? 'python' : 'python3';

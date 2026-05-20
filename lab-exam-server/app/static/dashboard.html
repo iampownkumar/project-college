@@ -684,7 +684,7 @@
                 }
             });
 
-            // Top bar countdown
+            // Top bar countdown + AUTO-CLOSE when session expires
             const activeSession = filteredSessions.find(s => s.status === 'active' && s.end_time);
             const topDiv = document.getElementById('topActiveSession');
             const topCount = document.getElementById('topCountdown');
@@ -694,6 +694,18 @@
                 topDiv.classList.remove('hidden');
                 if (diff <= 0) {
                     topCount.innerText = 'EXPIRED';
+                    if (!window._autoClosingSession) {
+                        window._autoClosingSession = true;
+                        fetch(`${API_BASE}/session/${activeSession.id}/status`, {
+                            method: 'PUT',
+                            headers: getHeaders(),
+                            body: JSON.stringify({ status: 'closed' })
+                        }).then(() => {
+                            showToast('Session auto-closed — time expired');
+                            window._autoClosingSession = false;
+                            loadInitialData();
+                        }).catch(() => { window._autoClosingSession = false; });
+                    }
                 } else {
                     const h = Math.floor(diff / (1000 * 60 * 60));
                     const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
@@ -702,6 +714,7 @@
                 }
             } else {
                 if (topDiv) topDiv.classList.add('hidden');
+                window._autoClosingSession = false;
             }
         }, 1000);
         let filteredStudents = [];
@@ -1003,7 +1016,7 @@
                 }
             });
 
-            // Top bar countdown
+            // Top bar countdown + AUTO-CLOSE when session expires
             const activeSession = filteredSessions.find(s => s.status === 'active' && s.end_time);
             const topDiv = document.getElementById('topActiveSession');
             const topCount = document.getElementById('topCountdown');
@@ -1013,6 +1026,18 @@
                 topDiv.classList.remove('hidden');
                 if (diff <= 0) {
                     topCount.innerText = 'EXPIRED';
+                    if (!window._autoClosingSession) {
+                        window._autoClosingSession = true;
+                        fetch(`${API_BASE}/session/${activeSession.id}/status`, {
+                            method: 'PUT',
+                            headers: getHeaders(),
+                            body: JSON.stringify({ status: 'closed' })
+                        }).then(() => {
+                            showToast('Session auto-closed — time expired');
+                            window._autoClosingSession = false;
+                            loadInitialData();
+                        }).catch(() => { window._autoClosingSession = false; });
+                    }
                 } else {
                     const h = Math.floor(diff / (1000 * 60 * 60));
                     const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
@@ -1021,6 +1046,7 @@
                 }
             } else {
                 if (topDiv) topDiv.classList.add('hidden');
+                window._autoClosingSession = false;
             }
         }, 1000);
 
