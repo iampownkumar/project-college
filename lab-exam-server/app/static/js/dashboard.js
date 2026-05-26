@@ -5,9 +5,7 @@
 // ============================================================
 
 // ── Config ──────────────────────────────────────────────────
-const BASE = '';          // same origin
-const KEY_STORAGE = 'korelium_admin_key';
-let ADMIN_KEY = localStorage.getItem(KEY_STORAGE) || '';
+const BASE = '';
 
 let selectedSessionId = null;
 let monitorTimer = null;
@@ -17,10 +15,7 @@ let parsedCsvStudents = [];
 async function api(method, path, body = null) {
   const opts = {
     method,
-    headers: {
-      'X-Admin-Key': ADMIN_KEY,
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
   };
   if (body !== null) opts.body = JSON.stringify(body);
   const res = await fetch(BASE + path, opts);
@@ -56,34 +51,6 @@ function timeSince(iso) {
   if (d < 60)  return `${d}s ago`;
   if (d < 3600) return `${Math.floor(d/60)}m ago`;
   return `${Math.floor(d/3600)}h ago`;
-}
-
-// ════════════════════════════════════════════════════════════
-//  LOGIN
-// ════════════════════════════════════════════════════════════
-async function tryLogin() {
-  const key = document.getElementById('adminKeyInput').value.trim();
-  if (!key) return;
-  ADMIN_KEY = key;
-  try {
-    await api('GET', '/api/v1/admin/sessions');
-    localStorage.setItem(KEY_STORAGE, key);
-    showApp();
-  } catch {
-    document.getElementById('loginError').classList.remove('hidden');
-    ADMIN_KEY = '';
-  }
-}
-
-function showApp() {
-  document.getElementById('loginOverlay').classList.add('hidden');
-  document.getElementById('app').classList.remove('hidden');
-  init();
-}
-
-function logout() {
-  localStorage.removeItem(KEY_STORAGE);
-  location.reload();
 }
 
 // ════════════════════════════════════════════════════════════
@@ -546,11 +513,6 @@ function esc(str) {
 // ════════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
 
-  // Login
-  document.getElementById('loginBtn').addEventListener('click', tryLogin);
-  document.getElementById('adminKeyInput').addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
-  document.getElementById('logoutBtn').addEventListener('click', logout);
-
   // Sessions sidebar
   document.getElementById('newSessionBtn').addEventListener('click', openNewSessionModal);
   document.getElementById('emptyNewBtn').addEventListener('click', openNewSessionModal);
@@ -599,10 +561,5 @@ document.addEventListener('DOMContentLoaded', () => {
     handleCsvFile(e.dataTransfer.files[0]);
   });
 
-  // Auto-login if key is stored
-  if (ADMIN_KEY) {
-    api('GET', '/api/v1/admin/sessions')
-      .then(() => showApp())
-      .catch(() => { ADMIN_KEY = ''; localStorage.removeItem(KEY_STORAGE); });
-  }
+  init();
 });

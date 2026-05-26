@@ -47,7 +47,6 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.core.database import get_db
-from app.core.security import verify_admin_key
 from app.services.admin_service import AdminService
 from app.services.file_service import FileService
 from app.schemas.common import SuccessResponse, ErrorResponse
@@ -74,7 +73,6 @@ from app.schemas.admin import (
 router = APIRouter(
     prefix="/admin",
     tags=["Admin"],
-    dependencies=[Depends(verify_admin_key)],  # Phase 4: every admin route requires X-Admin-Key
 )
 
 
