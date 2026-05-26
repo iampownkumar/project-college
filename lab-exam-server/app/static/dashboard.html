@@ -152,230 +152,244 @@
 
 
 
-                    <!-- DEPARTMENTS TAB -->
-                    <div id="departments-tab" class="tab-content">
-                        <div class="flex justify-between items-center mb-6">
-                            <h2 class="text-3xl font-bold text-gray-800">Departments</h2>
-                            <button onclick="openModal('deptModal')"
-                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">+
-                                New Department</button>
+                <!-- DEPARTMENTS TAB -->
+                <div id="departments-tab" class="tab-content">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-bold text-gray-800">Departments</h2>
+                        <button onclick="openModal('deptModal')"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">+
+                            New Department</button>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <table class="w-full text-left text-sm">
+                            <thead
+                                class="bg-gray-50 text-gray-600 text-xs uppercase font-semibold border-b border-gray-200">
+                                <tr>
+                                    <th class="px-6 py-4">ID</th>
+                                    <th class="px-6 py-4">Name</th>
+                                    <th class="px-6 py-4">Code</th>
+                                    <th class="px-6 py-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="deptsList" class="divide-y divide-gray-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- SESSIONS TAB -->
+
+                <div id="sessions-tab" class="tab-content active">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-bold text-gray-800">Exam Sessions</h2>
+                        <button onclick="openModal('sessionModal')"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">+
+                            New Session</button>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <table class="w-full text-left text-sm">
+                            <thead
+                                class="bg-gray-50 text-gray-600 text-xs uppercase font-semibold border-b border-gray-200">
+                                <tr>
+                                    <th class="px-6 py-4">ID</th>
+                                    <th class="px-6 py-4">Title</th>
+                                    <th class="px-6 py-4">Dept</th>
+                                    <th class="px-6 py-4">Time limit</th>
+                                    <th class="px-6 py-4">Status</th>
+                                    <th class="px-6 py-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sessionsList" class="divide-y divide-gray-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- QUESTIONS TAB -->
+                <div id="questions-tab" class="tab-content">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-bold text-gray-800">Questions</h2>
+                        <button onclick="openBulkQuestionModal()"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                            </svg>
+                            Upload Questions CSV
+                        </button>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Select Session to View
+                            Questions</label>
+                        <select id="qSessionSelect"
+                            class="w-full md:w-1/3 border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            onchange="loadQuestionsForSession(this.value)">
+                            <option value="">-- Select Session --</option>
+                        </select>
+                    </div>
+                    <div id="questionsList" class="space-y-4"></div>
+                </div>
+
+                <!-- STUDENTS TAB -->
+                <div id="students-tab" class="tab-content">
+
+                    <!-- ── Top bar ── -->
+                    <div class="flex justify-between items-center mb-6">
+                        <div class="flex items-center gap-3">
+                            <!-- Back breadcrumb (hidden at top level) -->
+                            <button id="stuBackBtn" onclick="stuNavBack()"
+                                class="hidden items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 19l-7-7 7-7" />
+                                </svg>
+                                <span id="stuBackLabel">Back</span>
+                            </button>
+                            <h2 id="stuHeading" class="text-3xl font-bold text-gray-800">Students</h2>
                         </div>
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                            <table class="w-full text-left text-sm">
-                                <thead
-                                    class="bg-gray-50 text-gray-600 text-xs uppercase font-semibold border-b border-gray-200">
-                                    <tr>
-                                        <th class="px-6 py-4">ID</th>
-                                        <th class="px-6 py-4">Name</th>
-                                        <th class="px-6 py-4">Code</th>
-                                        <th class="px-6 py-4 text-right">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="deptsList" class="divide-y divide-gray-100"></tbody>
-                            </table>
+                        <div class="flex items-center gap-2">
+                            <!-- CSV upload -->
+                            <button onclick="openModal('bulkStudentModal')"
+                                class="border border-green-500 text-green-700 hover:bg-green-50 px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition">⬆
+                                Bulk Upload CSV</button>
+                            <!-- Delete all -->
+                            <button onclick="deleteAllStudents()"
+                                class="border border-red-400 text-red-600 hover:bg-red-50 px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition">🗑
+                                Delete All</button>
+                            <!-- Add single -->
+                            <button onclick="openModal('studentModal')"
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition">+
+                                Add Student</button>
                         </div>
                     </div>
 
-                    <!-- SESSIONS TAB -->
+                    <!-- ── LEVEL 0 : Year cards ── -->
+                    <div id="stuYearView">
+                        <p class="text-sm text-gray-500 mb-4">Click a year to browse sections and students.</p>
+                        <div id="yearCardGrid" class="grid grid-cols-2 md:grid-cols-4 gap-5"></div>
+                    </div>
 
-                    <div id="sessions-tab" class="tab-content active">
-                        <div class="flex justify-between items-center mb-6">
-                            <h2 class="text-3xl font-bold text-gray-800">Exam Sessions</h2>
-                            <button onclick="openModal('sessionModal')"
-                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">+
-                                New Session</button>
-                        </div>
+                    <!-- ── LEVEL 1 : Section cards ── -->
+                    <div id="stuSectionView" class="hidden">
+                        <p id="stuSectionSubtitle" class="text-sm text-gray-500 mb-4"></p>
+                        <div id="sectionCardGrid" class="grid grid-cols-2 md:grid-cols-4 gap-5"></div>
+                    </div>
+
+                    <!-- ── LEVEL 2 : Student table ── -->
+                    <div id="stuTableView" class="hidden">
+                        <p id="stuTableSubtitle" class="text-sm text-gray-500 mb-3"></p>
                         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                             <table class="w-full text-left text-sm">
                                 <thead
                                     class="bg-gray-50 text-gray-600 text-xs uppercase font-semibold border-b border-gray-200">
                                     <tr>
-                                        <th class="px-6 py-4">ID</th>
-                                        <th class="px-6 py-4">Title</th>
-                                        <th class="px-6 py-4">Dept</th>
-                                        <th class="px-6 py-4">Time limit</th>
+                                        <th class="px-6 py-4">#</th>
+                                        <th class="px-6 py-4">Reg No</th>
+                                        <th class="px-6 py-4">Name</th>
+                                        <th class="px-6 py-4">Department</th>
+                                        <th class="px-6 py-4">Section</th>
+                                        <th class="px-6 py-4">Year</th>
                                         <th class="px-6 py-4">Status</th>
                                         <th class="px-6 py-4 text-right">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody id="sessionsList" class="divide-y divide-gray-100"></tbody>
+                                <tbody id="stuTableBody" class="divide-y divide-gray-100"></tbody>
                             </table>
                         </div>
                     </div>
 
-                    <!-- QUESTIONS TAB -->
-                    <div id="questions-tab" class="tab-content">
-                        <div class="flex justify-between items-center mb-6">
-                            <h2 class="text-3xl font-bold text-gray-800">Questions</h2>
-                            <button onclick="openBulkQuestionModal()"
-                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
-                                Upload Questions CSV
-                            </button>
+                </div>
+
+                <!-- ASSIGNMENTS TAB -->
+                <div id="assignments-tab" class="tab-content">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-bold text-gray-800">Assignments</h2>
+                        <div class="flex space-x-2">
+                            <button onclick="openModal('assignmentModal')"
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm">+
+                                Assign to Class</button>
                         </div>
-                        <div class="mb-6">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Select Session to View
-                                Questions</label>
-                            <select id="qSessionSelect"
-                                class="w-full md:w-1/3 border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                onchange="loadQuestionsForSession(this.value)">
-                                <option value="">-- Select Session --</option>
-                            </select>
-                        </div>
-                        <div id="questionsList" class="space-y-4"></div>
                     </div>
-
-                    <!-- STUDENTS TAB -->
-                    <div id="students-tab" class="tab-content">
-
-                        <!-- ── Top bar ── -->
-                        <div class="flex justify-between items-center mb-6">
-                            <div class="flex items-center gap-3">
-                                <!-- Back breadcrumb (hidden at top level) -->
-                                <button id="stuBackBtn" onclick="stuNavBack()" class="hidden items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                                    <span id="stuBackLabel">Back</span>
-                                </button>
-                                <h2 id="stuHeading" class="text-3xl font-bold text-gray-800">Students</h2>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <!-- CSV upload -->
-                                <button onclick="openModal('bulkStudentModal')" class="border border-green-500 text-green-700 hover:bg-green-50 px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition">⬆ Bulk Upload CSV</button>
-                                <!-- Delete all -->
-                                <button onclick="deleteAllStudents()" class="border border-red-400 text-red-600 hover:bg-red-50 px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition">🗑 Delete All</button>
-                                <!-- Add single -->
-                                <button onclick="openModal('studentModal')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition">+ Add Student</button>
-                            </div>
-                        </div>
-
-                        <!-- ── LEVEL 0 : Year cards ── -->
-                        <div id="stuYearView">
-                            <p class="text-sm text-gray-500 mb-4">Click a year to browse sections and students.</p>
-                            <div id="yearCardGrid" class="grid grid-cols-2 md:grid-cols-4 gap-5"></div>
-                        </div>
-
-                        <!-- ── LEVEL 1 : Section cards ── -->
-                        <div id="stuSectionView" class="hidden">
-                            <p id="stuSectionSubtitle" class="text-sm text-gray-500 mb-4"></p>
-                            <div id="sectionCardGrid" class="grid grid-cols-2 md:grid-cols-4 gap-5"></div>
-                        </div>
-
-                        <!-- ── LEVEL 2 : Student table ── -->
-                        <div id="stuTableView" class="hidden">
-                            <p id="stuTableSubtitle" class="text-sm text-gray-500 mb-3"></p>
-                            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                                <table class="w-full text-left text-sm">
-                                    <thead class="bg-gray-50 text-gray-600 text-xs uppercase font-semibold border-b border-gray-200">
-                                        <tr>
-                                            <th class="px-6 py-4">#</th>
-                                            <th class="px-6 py-4">Reg No</th>
-                                            <th class="px-6 py-4">Name</th>
-                                            <th class="px-6 py-4">Department</th>
-                                            <th class="px-6 py-4">Section</th>
-                                            <th class="px-6 py-4">Year</th>
-                                            <th class="px-6 py-4">Status</th>
-                                            <th class="px-6 py-4 text-right">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="stuTableBody" class="divide-y divide-gray-100"></tbody>
-                                </table>
-                            </div>
-                        </div>
-
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Select Session</label>
+                        <select id="aSessionSelect"
+                            class="w-full md:w-1/3 border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            onchange="loadAssignmentsForSession(this.value)">
+                            <option value="">-- Select Session --</option>
+                        </select>
                     </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <table class="w-full text-left text-sm">
+                            <thead
+                                class="bg-gray-50 text-gray-600 text-xs uppercase font-semibold border-b border-gray-200">
+                                <tr>
+                                    <th class="px-6 py-4">Student</th>
+                                    <th class="px-6 py-4">Assigned Question</th>
+                                    <th class="px-6 py-4">Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="assignmentsList" class="divide-y divide-gray-100"></tbody>
+                        </table>
+                    </div>
+                </div>
 
-                    <!-- ASSIGNMENTS TAB -->
-                    <div id="assignments-tab" class="tab-content">
-                        <div class="flex justify-between items-center mb-6">
-                            <h2 class="text-3xl font-bold text-gray-800">Assignments</h2>
-                            <div class="flex space-x-2">
-                                <button onclick="openModal('assignmentModal')"
-                                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm">+
-                                    Assign to Class</button>
-                            </div>
-                        </div>
-                        <div class="mb-6">
+                <!-- LIVE MONITOR TAB -->
+                <div id="monitor-tab" class="tab-content">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-bold text-gray-800">Live Monitor</h2>
+                        <button onclick="refreshMonitor()" class="text-blue-600 hover:underline text-sm font-medium">↻
+                            Refresh</button>
+                    </div>
+                    <div class="mb-6 flex space-x-4 items-end">
+                        <div class="w-1/3">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Select Session</label>
-                            <select id="aSessionSelect"
-                                class="w-full md:w-1/3 border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                onchange="loadAssignmentsForSession(this.value)">
+                            <select id="mSessionSelect"
+                                class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                                onchange="refreshMonitor()">
                                 <option value="">-- Select Session --</option>
                             </select>
                         </div>
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                            <table class="w-full text-left text-sm">
-                                <thead
-                                    class="bg-gray-50 text-gray-600 text-xs uppercase font-semibold border-b border-gray-200">
-                                    <tr>
-                                        <th class="px-6 py-4">Student</th>
-                                        <th class="px-6 py-4">Assigned Question</th>
-                                        <th class="px-6 py-4">Time</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="assignmentsList" class="divide-y divide-gray-100"></tbody>
-                            </table>
+                        <div class="text-sm text-gray-600 pb-2">
+                            Online: <span id="mOnlineCount" class="font-bold text-green-600">0</span> / <span
+                                id="mTotalCount">0</span>
                         </div>
                     </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="monitorGrid"></div>
+                </div>
 
-                    <!-- LIVE MONITOR TAB -->
-                    <div id="monitor-tab" class="tab-content">
-                        <div class="flex justify-between items-center mb-6">
-                            <h2 class="text-3xl font-bold text-gray-800">Live Monitor</h2>
-                            <button onclick="refreshMonitor()"
-                                class="text-blue-600 hover:underline text-sm font-medium">↻ Refresh</button>
-                        </div>
-                        <div class="mb-6 flex space-x-4 items-end">
-                            <div class="w-1/3">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Select Session</label>
-                                <select id="mSessionSelect"
-                                    class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                    onchange="refreshMonitor()">
-                                    <option value="">-- Select Session --</option>
-                                </select>
-                            </div>
-                            <div class="text-sm text-gray-600 pb-2">
-                                Online: <span id="mOnlineCount" class="font-bold text-green-600">0</span> / <span
-                                    id="mTotalCount">0</span>
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="monitorGrid"></div>
+                <!-- SUBMISSIONS TAB -->
+                <div id="submissions-tab" class="tab-content">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-3xl font-bold text-gray-800">Submissions</h2>
+                        <button onclick="refreshSubmissions()"
+                            class="text-blue-600 hover:underline text-sm font-medium">↻ Refresh</button>
                     </div>
-
-                    <!-- SUBMISSIONS TAB -->
-                    <div id="submissions-tab" class="tab-content">
-                        <div class="flex justify-between items-center mb-6">
-                            <h2 class="text-3xl font-bold text-gray-800">Submissions</h2>
-                            <button onclick="refreshSubmissions()"
-                                class="text-blue-600 hover:underline text-sm font-medium">↻ Refresh</button>
-                        </div>
-                        <div class="mb-6">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Select Session</label>
-                            <select id="subSessionSelect"
-                                class="w-full md:w-1/3 border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                onchange="refreshSubmissions()">
-                                <option value="">-- Select Session --</option>
-                            </select>
-                        </div>
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                            <table class="w-full text-left text-sm">
-                                <thead
-                                    class="bg-gray-50 text-gray-600 text-xs uppercase font-semibold border-b border-gray-200">
-                                    <tr>
-                                        <th class="px-6 py-4">Student</th>
-                                        <th class="px-6 py-4">Question</th>
-                                        <th class="px-6 py-4">Type</th>
-                                        <th class="px-6 py-4">Tries</th>
-                                        <th class="px-6 py-4">Time</th>
-                                        <th class="px-6 py-4">Code</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="submissionsList" class="divide-y divide-gray-100"></tbody>
-                            </table>
-                        </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Select Session</label>
+                        <select id="subSessionSelect"
+                            class="w-full md:w-1/3 border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            onchange="refreshSubmissions()">
+                            <option value="">-- Select Session --</option>
+                        </select>
                     </div>
-                </div> <!-- End Data Container -->
-            </main>
-        </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <table class="w-full text-left text-sm">
+                            <thead
+                                class="bg-gray-50 text-gray-600 text-xs uppercase font-semibold border-b border-gray-200">
+                                <tr>
+                                    <th class="px-6 py-4">Student</th>
+                                    <th class="px-6 py-4">Question</th>
+                                    <th class="px-6 py-4">Type</th>
+                                    <th class="px-6 py-4">Tries</th>
+                                    <th class="px-6 py-4">Time</th>
+                                    <th class="px-6 py-4">Code</th>
+                                </tr>
+                            </thead>
+                            <tbody id="submissionsList" class="divide-y divide-gray-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+        </div> <!-- End Data Container -->
+        </main>
+    </div>
     </div>
 
     <!-- MODALS -->
@@ -475,9 +489,12 @@
                     <input type="file" id="bqFile" accept=".csv"
                         class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                     <p class="mt-2 text-xs text-gray-500">
-                        Required columns: <strong>title, statement, starter_code, ex1_input, ex1_output, test1_input, test1_output, test1_marks</strong> (supports up to ex2 and test5).<br>
-                        <span class="text-indigo-600 font-semibold">Use <code class="bg-gray-100 px-1 rounded">|</code> as a line separator for multi-line inputs.</span>
-                        e.g. <code class="bg-gray-100 px-1 rounded">3|4</code> means two input lines: <code>3</code> then <code>4</code>.
+                        Required columns: <strong>title, statement, starter_code, ex1_input, ex1_output, test1_input,
+                            test1_output, test1_marks</strong> (supports up to ex2 and test5).<br>
+                        <span class="text-indigo-600 font-semibold">Use <code class="bg-gray-100 px-1 rounded">|</code>
+                            as a line separator for multi-line inputs.</span>
+                        e.g. <code class="bg-gray-100 px-1 rounded">3|4</code> means two input lines: <code>3</code>
+                        then <code>4</code>.
                     </p>
                 </div>
             </div>
@@ -500,7 +517,8 @@
                     <label class="block text-sm font-medium text-gray-700">CSV File</label>
                     <input type="file" id="bsFile" accept=".csv"
                         class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100">
-                    <p class="mt-1 text-xs text-gray-500">Required columns (any order): <strong>department, section, register number, name, year</strong></p>
+                    <p class="mt-1 text-xs text-gray-500">Required columns (any order): <strong>department, section,
+                            register number, name, year</strong></p>
                 </div>
             </div>
             <div class="mt-6 flex justify-end space-x-3">
@@ -540,7 +558,8 @@
                 <!-- Test Cases -->
                 <div>
                     <div class="flex items-center justify-between mb-2">
-                        <label class="block text-sm font-medium text-gray-700">Test Cases <span class="text-red-500">*</span></label>
+                        <label class="block text-sm font-medium text-gray-700">Test Cases <span
+                                class="text-red-500">*</span></label>
                         <button type="button" onclick="addTestCaseRow()"
                             class="text-xs text-blue-600 hover:text-blue-800 font-bold border border-blue-200 bg-blue-50 px-2 py-1 rounded">
                             + Add Test Case
@@ -666,1121 +685,15 @@
         </div>
     </div>
 
-    <script>
-        const API_BASE = '/api/v1/admin';
-        let adminKey = localStorage.getItem('adminKey') || '';
-        let staffCode = localStorage.getItem('staffCode') || '';
-
-        let rawAllStudents = [];
-        let rawAllSessions = [];
-
-        let filteredStudents = [];
-        let filteredSessions = [];
-
-        let pendingDeletions = {}; // regNum -> timeout ID
-
-        function parseUTCDate(dateStr) {
-            if (!dateStr) return null;
-            const hasTz = dateStr.endsWith('Z') || dateStr.includes('+') || (dateStr.includes('-') && dateStr.lastIndexOf('-') > 15);
-            return new Date(hasTz ? dateStr : dateStr + 'Z');
-        }
-
-        // Initialize App
-        if (adminKey) {
-            document.getElementById('loginOverlay').classList.add('hidden');
-            document.getElementById('mainApp').classList.remove('hidden');
-            document.getElementById('staffNameDisplay').innerText = `Logged in as ${staffCode}`;
-            loadInitialData();
-        }
-
-        async function performLogin() {
-            const sc = document.getElementById('staffCode').value;
-            const pwd = document.getElementById('staffPassword').value;
-            const err = document.getElementById('loginError');
-            err.classList.add('hidden');
-
-            try {
-                const res = await fetch('/api/v1/auth/admin/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ staff_code: sc, password: pwd })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    adminKey = data.admin_key;
-                    staffCode = data.staff_code;
-                    localStorage.setItem('adminKey', adminKey);
-                    localStorage.setItem('staffCode', staffCode);
-                    document.getElementById('loginOverlay').classList.add('hidden');
-                    document.getElementById('mainApp').classList.remove('hidden');
-                    document.getElementById('staffNameDisplay').innerText = `Logged in as ${staffCode}`;
-                    loadInitialData();
-                } else {
-                    err.innerText = data.message;
-                    err.classList.remove('hidden');
-                }
-            } catch (e) {
-                err.innerText = "Connection error.";
-                err.classList.remove('hidden');
-            }
-        }
-
-        function logout() {
-            localStorage.removeItem('adminKey');
-            localStorage.removeItem('staffCode');
-            location.reload();
-        }
-
-        function getHeaders() {
-            return {
-                'Content-Type': 'application/json',
-                'X-Admin-Key': adminKey
-            };
-        }
-
-        function showToast(msg, isError = false) {
-            const t = document.getElementById('toast');
-            t.textContent = msg;
-            t.className = `fixed top-4 right-4 px-4 py-2 rounded shadow-lg transition-opacity duration-300 z-50 ${isError ? 'bg-red-600' : 'bg-gray-800'} text-white`;
-            t.style.opacity = '1';
-            setTimeout(() => t.style.opacity = '0', 3000);
-        }
-
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => {
-                el.classList.remove('active', 'bg-blue-100', 'text-blue-700');
-                el.classList.add('text-gray-600');
-            });
-            document.getElementById(tabId + '-tab').classList.add('active');
-
-            const btn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
-            btn.classList.add('active', 'bg-blue-100', 'text-blue-700');
-            btn.classList.remove('text-gray-600');
-
-            if (tabId === 'sessions') renderSessions();
-            if (tabId === 'departments') loadDepartments();
-            if (tabId === 'students') { stuLevel = 0; stuSelectedYear = null; stuSelectedSection = null; stuShowLevel(0); renderStudents(); }
-        }
-
-        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-
-        // ── DATA LOADING ──────────────────────────────────────────────
-        async function loadInitialData() {
-            try {
-                const [sRes, stRes] = await Promise.all([
-                    fetch(`${API_BASE}/sessions`, { headers: getHeaders() }),
-                    fetch(`${API_BASE}/students`, { headers: getHeaders() })
-                ]);
-
-                if (sRes.status === 401 || stRes.status === 401) return logout();
-
-                await loadDepartments();
-                rawAllSessions = await sRes.json();
-                rawAllStudents = await stRes.json();
-
-                // Always show everything — no dept filter
-                filteredSessions = rawAllSessions;
-                filteredStudents = rawAllStudents;
-
-                updateSessionDropdowns();
-                updateStudentFilters();
-                renderSessions();
-                renderStudents();
-            } catch (e) { console.error('Error loading initial data', e); }
-        }
-
-        function updateSessionDropdowns() {
-            const selects = [
-                { id: 'qSessionSelect', loader: loadQuestionsForSession },
-                { id: 'aSessionSelect', loader: loadAssignmentsForSession },
-                { id: 'mSessionSelect', loader: refreshMonitor },
-                { id: 'subSessionSelect', loader: refreshSubmissions },
-                { id: 'mqSession', loader: null },
-                { id: 'bqSession', loader: null },
-                { id: 'maSession', loader: loadQuestionsForMultiAssign }
-            ];
-
-            selects.forEach(obj => {
-                const el = document.getElementById(obj.id);
-                if (!el) return;
-                
-                const oldVal = el.value;
-                el.innerHTML = '<option value="">-- Select Session --</option>';
-                
-                let found = false;
-                filteredSessions.forEach(s => {
-                    el.innerHTML += `<option value="${s.id}">[${s.id}] ${s.title} (${s.status})</option>`;
-                    if (s.id.toString() === oldVal) found = true;
-                });
-                
-                if (found && oldVal) {
-                    el.value = oldVal;
-                    // Auto-trigger the loader so the table doesn't disappear if still valid
-                    if (obj.loader) obj.loader(oldVal);
-                } else if (obj.loader) {
-                    // Clear the table if the previously selected session was filtered out
-                    obj.loader('');
-                }
-            });
-        }
-
-        function updateStudentFilters() {
-            // Populate Multi-Assign dropdown
-            const maList = document.getElementById('maStudents');
-            if (maList) {
-                maList.innerHTML = '';
-                filteredStudents.forEach(s => maList.innerHTML += `<option value="${s.registration_number}">${s.registration_number} - ${s.name} (${s.section})</option>`);
-            }
-            // Re-render year cards whenever student data refreshes
-            renderStudents();
-        }
-
-
-        let allDepts = [];
-
-        // ── DEPARTMENTS ───────────────────────────────────────────────
-        async function loadDepartments() {
-            try {
-                const res = await fetch(`${API_BASE}/departments`, { headers: getHeaders() });
-                allDepts = await res.json();
-
-                const list = document.getElementById('deptsList');
-                if (!list) return;
-                list.innerHTML = '';
-                allDepts.forEach(d => {
-                    list.innerHTML += `
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4">${d.id}</td>
-                            <td class="px-6 py-4 font-medium text-gray-800">${d.name}</td>
-                            <td class="px-6 py-4 font-mono">${d.code}</td>
-                            <td class="px-6 py-4 text-right">
-                                <button onclick="deleteDepartment(${d.id})" class="text-red-600 hover:text-red-900 text-xs font-bold border border-red-200 bg-red-50 px-2 py-1 rounded shadow-sm">Delete</button>
-                            </td>
-                        </tr>
-                    `;
-                });
-
-                // Populate dept dropdowns inside modals (session + student)
-                const sDept = document.getElementById('sDept');
-                const stDept = document.getElementById('stDept');
-                if (sDept && sDept.tagName === 'SELECT') {
-                    sDept.innerHTML = '';
-                    stDept.innerHTML = '';
-                    allDepts.forEach(d => {
-                        sDept.innerHTML += `<option value="${d.code}">${d.code}</option>`;
-                        stDept.innerHTML += `<option value="${d.code}">${d.code}</option>`;
-                    });
-                } else if (sDept && sDept.tagName === 'INPUT') {
-                    sDept.outerHTML = `<select id="sDept" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">${allDepts.map(d => `<option value="${d.code}">${d.code}</option>`).join('')}</select>`;
-                    stDept.outerHTML = `<select id="stDept" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">${allDepts.map(d => `<option value="${d.code}">${d.code}</option>`).join('')}</select>`;
-                }
-            } catch (e) { console.error(e); }
-        }
-
-        async function createDepartment() {
-            const payload = {
-                name: document.getElementById('dName').value,
-                code: document.getElementById('dCode').value.toUpperCase()
-            };
-            const res = await fetch(`${API_BASE}/department`, {
-                method: 'POST', headers: getHeaders(), body: JSON.stringify(payload)
-            });
-            if (res.ok) {
-                closeModal('deptModal');
-                showToast("Department created");
-                await loadDepartments();
-                await loadInitialData();
-            } else showToast("Failed to create", true);
-        }
-
-        async function deleteDepartment(id) {
-            if (!confirm('Delete this department?')) return;
-            const res = await fetch(`${API_BASE}/department/${id}`, { method: 'DELETE', headers: getHeaders() });
-            if (res.ok) {
-                showToast("Department deleted");
-                await loadDepartments();
-                await loadInitialData();
-            } else showToast("Failed to delete", true);
-        }
-
-        // ── SESSIONS ──────────────────────────────────────────────────
-
-
-
-        setInterval(() => {
-            // Table countdowns
-            document.querySelectorAll('.session-countdown').forEach(el => {
-                const endStr = el.getAttribute('data-end');
-                if (!endStr) return;
-                const end = parseUTCDate(endStr).getTime();
-                const now = new Date().getTime();
-                const diff = end - now;
-                if (diff <= 0) {
-                    el.innerHTML = '<span class="text-red-600 font-bold">Expired</span>';
-                } else {
-                    const h = Math.floor(diff / (1000 * 60 * 60));
-                    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-                    const s = Math.floor((diff % (1000 * 60)) / 1000);
-                    el.innerHTML = `<span class="text-green-600 font-bold font-mono text-sm">${h}h ${m}m ${s}s left</span>`;
-                }
-            });
-
-            // Top bar countdown + AUTO-CLOSE when session expires
-            const activeSession = filteredSessions.find(s => s.status === 'active' && s.end_time);
-            const topDiv = document.getElementById('topActiveSession');
-            const topCount = document.getElementById('topCountdown');
-            if (activeSession) {
-                const end = parseUTCDate(activeSession.end_time).getTime();
-                const diff = end - new Date().getTime();
-                topDiv.classList.remove('hidden');
-                if (diff <= 0) {
-                    topCount.innerText = 'EXPIRED';
-                    if (!window._autoClosingSession) {
-                        window._autoClosingSession = true;
-                        fetch(`${API_BASE}/session/${activeSession.id}/status`, {
-                            method: 'PUT',
-                            headers: getHeaders(),
-                            body: JSON.stringify({ status: 'closed' })
-                        }).then(() => {
-                            showToast('Session auto-closed — time expired');
-                            window._autoClosingSession = false;
-                            loadInitialData();
-                        }).catch(() => { window._autoClosingSession = false; });
-                    }
-                } else {
-                    const h = Math.floor(diff / (1000 * 60 * 60));
-                    const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
-                    const s = Math.floor((diff % (1000 * 60)) / 1000).toString().padStart(2, '0');
-                    topCount.innerText = `${h}:${m}:${s}`;
-                }
-            } else {
-                if (topDiv) topDiv.classList.add('hidden');
-                window._autoClosingSession = false;
-            }
-        }, 1000);
-
-
-        function renderSessions() {
-
-            const list = document.getElementById('sessionsList');
-            list.innerHTML = '';
-
-            if (filteredSessions.length === 0) {
-                list.innerHTML = `<tr><td colspan="6" class="px-6 py-8 text-center text-gray-500">No sessions found.</td></tr>`;
-                return;
-            }
-
-            filteredSessions.forEach(s => {
-
-                const statusColor = s.status === 'active' ? 'bg-green-100 text-green-800' : (s.status === 'draft' ? 'bg-gray-100 text-gray-800' : 'bg-red-100 text-red-800');
-                const timeStr = s.start_time ? parseUTCDate(s.start_time).toLocaleString() : 'Not Set';
-                const endStr = s.end_time ? `<br>Ends: ${parseUTCDate(s.end_time).toLocaleTimeString()}` : '';
-                const activeTimer = s.status === 'active' && s.end_time ? `<br><div class="session-countdown mt-1" data-end="${s.end_time}"></div>` : '';
-
-                list.innerHTML += `
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4">${s.id}</td>
-                        <td class="px-6 py-4 font-medium text-gray-900">${s.title}</td>
-                        <td class="px-6 py-4">${s.department}</td>
-                        <td class="px-6 py-4 text-xs text-gray-500">${timeStr}${endStr}${activeTimer}<br><span class="font-bold">${s.duration_minutes}m</span> limit</td>
-                        <td class="px-6 py-4"><span class="px-2 py-1 rounded-full text-xs font-semibold ${statusColor}">${s.status}</span></td>
-
-                        <td class="px-6 py-4 text-right space-x-2">
-                            ${s.status === 'draft' ? `<button onclick="updateSessionStatus(${s.id}, 'active')" class="text-green-600 hover:text-green-900 text-xs font-bold border border-green-200 bg-green-50 px-2 py-1 rounded shadow-sm">Activate</button>` : ''}
-                            ${s.status === 'active' ? `<button onclick="updateSessionStatus(${s.id}, 'closed')" class="text-red-600 hover:text-red-900 text-xs font-bold border border-red-200 bg-red-50 px-2 py-1 rounded shadow-sm">Close Exam</button>` : ''}
-                            <button onclick="deleteSession(${s.id})" class="text-red-600 hover:text-red-900 text-xs font-bold border border-red-200 bg-red-50 px-2 py-1 rounded shadow-sm">Delete</button>
-                        </td>
-                    </tr>
-                `;
-            });
-        }
-
-        async function createSession() {
-            const d = document.getElementById('sDept').value;
-            const payload = {
-                title: document.getElementById('sTitle').value,
-                department: d,
-                language: document.getElementById('sLang').value,
-                duration_minutes: parseInt(document.getElementById('sMins').value),
-            };
-            const start = document.getElementById('sStart').value;
-            const end = document.getElementById('sEnd').value;
-            if (start) payload.start_time = new Date(start).toISOString();
-            if (end) payload.end_time = new Date(end).toISOString();
-
-            const res = await fetch(`${API_BASE}/session`, {
-                method: 'POST', headers: getHeaders(), body: JSON.stringify(payload)
-            });
-            if (res.ok) {
-                closeModal('sessionModal');
-                showToast("Session created");
-                await loadInitialData();
-            } else showToast("Failed to create session", true);
-        }
-
-        async function updateSessionStatus(id, status) {
-            if (status === 'closed' && !confirm('Are you sure you want to close this exam session?')) return;
-            await fetch(`${API_BASE}/session/${id}/status`, {
-                method: 'PUT', headers: getHeaders(), body: JSON.stringify({ status })
-            });
-            showToast(`Session marked as ${status}`);
-            await loadInitialData();
-        }
-
-        async function deleteSession(id) {
-            if (!confirm("Permanently delete this session and all its questions/assignments?")) return;
-            const res = await fetch(`${API_BASE}/session/${id}`, { method: 'DELETE', headers: getHeaders() });
-            if (res.ok) {
-                showToast("Session deleted");
-                await loadInitialData();
-            } else {
-                showToast("Failed to delete session", true);
-            }
-        }
-
-        // ── STUDENTS — drill-down navigation ──────────────────────────
-        // stuLevel: 0=year cards, 1=section cards, 2=student table
-        let stuLevel = 0;
-        let stuSelectedYear = null;
-        let stuSelectedSection = null;
-
-        const YEAR_COLORS = {
-            '1st': { bg: 'bg-indigo-50', border: 'border-indigo-200', badge: 'bg-indigo-600', hover: 'hover:bg-indigo-100', text: 'text-indigo-700', icon: '1️⃣' },
-            '2nd': { bg: 'bg-blue-50',   border: 'border-blue-200',   badge: 'bg-blue-600',   hover: 'hover:bg-blue-100',   text: 'text-blue-700',   icon: '2️⃣' },
-            '3rd': { bg: 'bg-violet-50', border: 'border-violet-200', badge: 'bg-violet-600', hover: 'hover:bg-violet-100', text: 'text-violet-700', icon: '3️⃣' },
-            '4th': { bg: 'bg-rose-50',   border: 'border-rose-200',   badge: 'bg-rose-600',   hover: 'hover:bg-rose-100',   text: 'text-rose-700',   icon: '4️⃣' },
-        };
-
-        function stuShowLevel(level) {
-            stuLevel = level;
-            document.getElementById('stuYearView').classList.toggle('hidden', level !== 0);
-            document.getElementById('stuSectionView').classList.toggle('hidden', level !== 1);
-            document.getElementById('stuTableView').classList.toggle('hidden', level !== 2);
-            const backBtn = document.getElementById('stuBackBtn');
-            if (level === 0) {
-                backBtn.classList.add('hidden'); backBtn.classList.remove('flex');
-                document.getElementById('stuHeading').textContent = 'Students';
-            } else {
-                backBtn.classList.remove('hidden'); backBtn.classList.add('flex');
-                if (level === 1) {
-                    document.getElementById('stuBackLabel').textContent = 'All Years';
-                    document.getElementById('stuHeading').textContent = `${stuSelectedYear} Year`;
-                } else {
-                    document.getElementById('stuBackLabel').textContent = `${stuSelectedYear} Year`;
-                    document.getElementById('stuHeading').textContent = `Section ${stuSelectedSection} — ${stuSelectedYear} Year`;
-                }
-            }
-        }
-
-        function stuNavBack() {
-            if (stuLevel === 2) stuOpenYear(stuSelectedYear);
-            else if (stuLevel === 1) { stuShowLevel(0); renderYearCards(); }
-        }
-
-        function renderYearCards() {
-            const grid = document.getElementById('yearCardGrid');
-            const YEARS = ['1st','2nd','3rd','4th'];
-            const allStudents = filteredStudents;
-            grid.innerHTML = '';
-            YEARS.forEach(yr => {
-                const count = allStudents.filter(s => s.year === yr).length;
-                const c = YEAR_COLORS[yr] || YEAR_COLORS['1st'];
-                grid.innerHTML += `
-                    <div onclick="stuOpenYear('${yr}')" class="cursor-pointer ${c.bg} ${c.border} border-2 rounded-2xl p-6 flex flex-col items-center gap-3 shadow-sm ${c.hover} transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
-                        <span class="text-4xl">${c.icon}</span>
-                        <div class="text-center">
-                            <div class="text-sm font-semibold text-gray-500 uppercase tracking-wide">${yr} Year</div>
-                            <div class="text-4xl font-extrabold ${c.text} mt-1">${count}</div>
-                            <div class="text-xs text-gray-400 mt-1">students</div>
-                        </div>
-                        <span class="${c.badge} text-white text-xs font-bold px-3 py-1 rounded-full mt-1">View Sections →</span>
-                    </div>
-                `;
-            });
-        }
-
-        function stuOpenYear(year) {
-            stuSelectedYear = year;
-            stuShowLevel(1);
-            const c = YEAR_COLORS[year] || YEAR_COLORS['1st'];
-            const yearStudents = filteredStudents.filter(s => s.year === year);
-            document.getElementById('stuSectionSubtitle').textContent =
-                `${yearStudents.length} student${yearStudents.length !== 1 ? 's' : ''} in ${year} year — click a section to view details`;
-
-            // Group by dept+section
-            const groups = {};
-            yearStudents.forEach(s => {
-                const key = `${s.department}__${s.section}`;
-                if (!groups[key]) groups[key] = { dept: s.department, section: s.section, count: 0 };
-                groups[key].count++;
-            });
-
-            const grid = document.getElementById('sectionCardGrid');
-            grid.innerHTML = '';
-            Object.values(groups).sort((a,b) => a.section.localeCompare(b.section)).forEach(g => {
-                grid.innerHTML += `
-                    <div onclick="stuOpenSection('${g.dept}','${g.section}')" class="cursor-pointer ${c.bg} ${c.border} border-2 rounded-2xl p-5 flex flex-col items-center gap-2 shadow-sm ${c.hover} transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
-                        <div class="w-12 h-12 rounded-full ${c.badge} flex items-center justify-center">
-                            <span class="text-white font-extrabold text-lg">${g.section}</span>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">${g.dept}</div>
-                            <div class="text-sm font-bold text-gray-600">Section ${g.section}</div>
-                        </div>
-                        <div class="${c.badge} text-white font-extrabold text-2xl rounded-xl px-4 py-1">${g.count}</div>
-                        <div class="text-xs text-gray-400">students</div>
-                    </div>
-                `;
-            });
-        }
-
-        function stuOpenSection(dept, section) {
-            stuSelectedSection = section;
-            stuShowLevel(2);
-            const sectionStudents = filteredStudents
-                .filter(s => s.year === stuSelectedYear && s.department === dept && s.section === section)
-                .sort((a,b) => a.registration_number.localeCompare(b.registration_number));
-
-            document.getElementById('stuTableSubtitle').textContent =
-                `${dept} — Section ${section} — ${stuSelectedYear} Year — ${sectionStudents.length} students`;
-
-            const tbody = document.getElementById('stuTableBody');
-            tbody.innerHTML = '';
-            if (sectionStudents.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="px-6 py-10 text-center text-gray-400">No students found.</td></tr>`;
-                return;
-            }
-            sectionStudents.forEach((s, idx) => {
-                const isPendingDel = pendingDeletions[s.registration_number];
-                const rowClass = isPendingDel ? 'bg-red-50 opacity-50 pointer-events-none' : 'hover:bg-gray-50';
-                tbody.innerHTML += `
-                    <tr class="${rowClass} transition">
-                        <td class="px-6 py-4 text-gray-400 text-xs">${idx + 1}</td>
-                        <td class="px-6 py-4 font-mono text-sm font-semibold text-gray-800">${s.registration_number}</td>
-                        <td class="px-6 py-4 font-medium text-gray-900">${s.name}</td>
-                        <td class="px-6 py-4 text-gray-600">${s.department}</td>
-                        <td class="px-6 py-4 text-gray-600">${s.section}</td>
-                        <td class="px-6 py-4 text-gray-600">${s.year}</td>
-                        <td class="px-6 py-4">
-                            <span class="px-2 py-1 rounded-full text-xs font-semibold ${s.enabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">${s.enabled ? 'Active' : 'Disabled'}</span>
-                        </td>
-                        <td class="px-6 py-4 text-right space-x-3">
-                            <button onclick="toggleStudent('${s.registration_number}', ${!s.enabled})" class="text-blue-600 hover:text-blue-900 text-xs font-medium">Toggle</button>
-                            <button onclick="triggerDelete('${s.registration_number}','${dept}','${section}')" class="text-red-600 hover:text-red-900 text-xs font-bold">Delete</button>
-                        </td>
-                    </tr>
-                `;
-            });
-        }
-
-        function renderStudents() {
-            // Called after data reload — re-render whichever level is active
-            renderYearCards();
-            if (stuLevel === 1 && stuSelectedYear) stuOpenYear(stuSelectedYear);
-            if (stuLevel === 2 && stuSelectedYear && stuSelectedSection) {
-                // find dept for this section+year
-                const match = filteredStudents.find(s => s.year === stuSelectedYear && s.section === stuSelectedSection);
-                if (match) stuOpenSection(match.department, stuSelectedSection);
-            }
-        }
-
-        async function createStudent() {
-            const res = await fetch(`${API_BASE}/student`, {
-                method: 'POST', headers: getHeaders(),
-                body: JSON.stringify({
-                    registration_number: document.getElementById('stReg').value.toUpperCase(),
-                    name: document.getElementById('stName').value,
-                    department: document.getElementById('stDept').value,
-                    batch: document.getElementById('stBatch').value,
-                    year: document.getElementById('stYear').value,
-                    section: document.getElementById('stSec').value.toUpperCase()
-                })
-            });
-            if (res.ok) { closeModal('studentModal'); showToast('Student added'); await loadInitialData(); }
-            else showToast('Failed to add', true);
-        }
-
-        async function toggleStudent(reg, state) {
-            await fetch(`${API_BASE}/student/${reg}/${state ? 'enable' : 'disable'}`, { method: 'PUT', headers: getHeaders() });
-            await loadInitialData();
-        }
-
-        async function deleteAllStudents() {
-            if (!confirm('⚠️ Delete ALL students permanently? This cannot be undone!')) return;
-            if (!confirm('Are you absolutely sure? This will wipe every student from the database.')) return;
-            const res = await fetch(`${API_BASE}/students/all`, { method: 'DELETE', headers: getHeaders() });
-            const data = await res.json();
-            if (res.ok) { showToast(data.message || 'All students deleted'); await loadInitialData(); }
-            else showToast(data.detail || 'Failed to delete', true);
-        }
-
-        function triggerDelete(reg, dept, section) {
-            if (pendingDeletions[reg]) return;
-            const container = document.getElementById('undoContainer');
-
-            const toast = document.createElement('div');
-            toast.className = 'undo-toast bg-gray-900 text-white px-4 py-3 rounded-lg shadow-xl flex items-center space-x-4 border border-gray-700';
-            toast.id = `undo-${reg}`;
-            toast.innerHTML = `
-                <div class="text-sm">Deleting <b>${reg}</b> in <span id="timer-${reg}" class="font-bold text-red-400">5</span>s</div>
-                <button class="bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-xs font-bold text-white transition">UNDO</button>
-            `;
-            container.appendChild(toast);
-
-            let timeLeft = 5;
-            const timerEl = document.getElementById(`timer-${reg}`);
-            const countdown = setInterval(() => {
-                timeLeft--;
-                timerEl.innerText = timeLeft;
-                if (timeLeft <= 0) { clearInterval(countdown); commitDelete(reg, toast, dept, section); }
-            }, 1000);
-
-            toast.querySelector('button').onclick = () => {
-                clearInterval(countdown);
-                delete pendingDeletions[reg];
-                toast.remove();
-                renderStudents();
-            };
-
-            pendingDeletions[reg] = countdown;
-            renderStudents();
-        }
-
-        async function commitDelete(reg, toastEl, dept, section) {
-            try {
-                await fetch(`${API_BASE}/student/${reg}`, { method: 'DELETE', headers: getHeaders() });
-                toastEl.remove();
-                delete pendingDeletions[reg];
-                showToast(`Student ${reg} deleted.`);
-                await loadInitialData();
-            } catch (e) {
-                toastEl.remove();
-                delete pendingDeletions[reg];
-                showToast(`Failed to delete ${reg}`, true);
-            }
-        }
-
-
-        // ── QUESTIONS ──────────────────────────────────────────────────
-        async function loadQuestionsForSession(sid) {
-            const list = document.getElementById('questionsList');
-            if (!sid) return list.innerHTML = '';
-            const res = await fetch(`${API_BASE}/session/${sid}/questions`, { headers: getHeaders() });
-            const data = await res.json();
-            list.innerHTML = '';
-            if (data.length === 0) return list.innerHTML = '<p class="text-gray-500">No questions for this session.</p>';
-            data.forEach(q => {
-                list.innerHTML += `
-                    <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex justify-between items-start">
-                        <div>
-                            <h4 class="font-bold text-gray-800">${q.title}</h4>
-                            <p class="text-sm text-gray-600 mt-1">${q.statement}</p>
-                            ${q.test_case_count > 0 ? `<div class="mt-2 text-xs bg-green-50 text-green-700 px-2 py-1 inline-block rounded border border-green-100">${q.test_case_count} Test Cases Added</div>` : ''}
-                        </div>
-                        <div class="flex flex-col space-y-2 items-end">
-                            <span class="text-xs bg-blue-100 text-blue-800 font-bold px-2 py-1 rounded uppercase">${q.language}</span>
-                            <button onclick="deleteQuestion(${q.id})" class="text-red-600 hover:text-red-900 text-xs font-bold border border-red-200 bg-red-50 px-2 py-1 rounded shadow-sm">Delete</button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        async function loadQuestionsForMultiAssign(sid) {
-            const mq = document.getElementById('maQuestion');
-            mq.innerHTML = '<option value="">Loading...</option>';
-            if (!sid) return;
-            const res = await fetch(`${API_BASE}/session/${sid}/questions`, { headers: getHeaders() });
-            const data = await res.json();
-            mq.innerHTML = '';
-            data.forEach(q => mq.innerHTML += `<option value="${q.id}">${q.title}</option>`);
-        }
-
-        function addTestCaseRow() {
-            const container = document.getElementById('testCasesContainer');
-            const idx = container.children.length;
-            const div = document.createElement('div');
-            div.className = 'grid grid-cols-2 gap-2 p-2 bg-gray-50 border border-gray-200 rounded relative';
-            div.innerHTML = `
-                <div>
-                    <label class="text-xs text-gray-500 font-medium">Input</label>
-                    <textarea class="tc-input w-full border-gray-300 rounded text-xs font-mono p-1 mt-0.5" rows="2" placeholder="stdin (leave blank if none)"></textarea>
-                </div>
-                <div>
-                    <label class="text-xs text-gray-500 font-medium">Expected Output <span class="text-red-400">*</span></label>
-                    <textarea class="tc-output w-full border-gray-300 rounded text-xs font-mono p-1 mt-0.5" rows="2" placeholder="expected stdout"></textarea>
-                </div>
-                <div class="col-span-2 flex items-center gap-3">
-                    <label class="text-xs text-gray-500">Marks:</label>
-                    <input type="number" class="tc-marks border-gray-300 rounded text-xs w-16 p-1" value="1" min="0">
-                    <label class="text-xs text-gray-500 ml-3">
-                        <input type="checkbox" class="tc-visible mr-1">Visible example
-                    </label>
-                    <button type="button" onclick="this.closest('div.grid').remove()"
-                        class="ml-auto text-xs text-red-500 hover:text-red-700">✕ Remove</button>
-                </div>`;
-            container.appendChild(div);
-        }
-
-        async function createQuestion() {
-            const sid = document.getElementById('mqSession').value;
-            if (!sid) return showToast("Select session first", true);
-            const title = document.getElementById('qTitle').value.trim();
-            if (!title) return showToast("Title is required", true);
-            const stmt = document.getElementById('qStmt').value.trim();
-            if (!stmt) return showToast("Problem statement is required", true);
-
-            // Collect test cases
-            const tcRows = document.querySelectorAll('#testCasesContainer > div');
-            if (tcRows.length === 0) return showToast("Add at least one test case", true);
-
-            const testCases = [];
-            const visibleExamples = [];
-            let valid = true;
-            tcRows.forEach((row, i) => {
-                const out = row.querySelector('.tc-output').value.trim();
-                if (!out) { showToast(`Test case ${i+1}: expected output is required`, true); valid = false; }
-                const inp = row.querySelector('.tc-input').value;
-                const marks = parseInt(row.querySelector('.tc-marks').value) || 1;
-                const isVisible = row.querySelector('.tc-visible').checked;
-                testCases.push({ input: inp, expected_output: out, marks });
-                if (isVisible) visibleExamples.push({ input: inp, output: out, explanation: '' });
-            });
-            if (!valid) return;
-
-            const payload = {
-                session_id: parseInt(sid),
-                title,
-                statement: stmt,
-                starter_code: document.getElementById('qStarter').value,
-                test_cases: testCases,
-                visible_examples: visibleExamples,
-                language: 'python',
-                constraints: []
-            };
-            const res = await fetch(`${API_BASE}/question`, {
-                method: 'POST', headers: getHeaders(), body: JSON.stringify(payload)
-            });
-            if (res.ok) {
-                // Reset modal
-                document.getElementById('qTitle').value = '';
-                document.getElementById('qStmt').value = '';
-                document.getElementById('qStarter').value = '';
-                document.getElementById('testCasesContainer').innerHTML = '';
-                closeModal('questionModal');
-                await loadInitialData();
-                loadQuestionsForSession(document.getElementById('qSessionSelect').value);
-                showToast("Question Added");
-            } else {
-                const err = await res.json().catch(() => ({}));
-                showToast("Failed: " + (err.detail || err.message || 'Unknown error'), true);
-            }
-        }
-
-        async function deleteQuestion(id) {
-            if (!confirm("Permanently delete this question?")) return;
-            const res = await fetch(`${API_BASE}/question/${id}`, { method: 'DELETE', headers: getHeaders() });
-            if (res.ok) {
-                await loadInitialData();
-                loadQuestionsForSession(document.getElementById('qSessionSelect').value);
-                showToast("Question deleted");
-            } else {
-                showToast("Failed to delete question", true);
-            }
-        }
-
-        // ── Robust RFC-4180 CSV parser ─────────────────────────────────────────
-        // Handles quoted fields with embedded newlines, CRLF, and escaped quotes.
-        function parseCsv(text) {
-            // Normalise line endings
-            text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-
-            const rows = [];
-            let i = 0;
-
-            while (i <= text.length) {
-                const row = [];
-
-                // Parse one row
-                while (i <= text.length) {
-                    if (i === text.length || (text[i] === '\n' && !row._inQuote)) {
-                        // End of row
-                        if (i < text.length) i++; // skip the newline
-                        break;
-                    }
-
-                    let cell = '';
-                    if (text[i] === '"') {
-                        // Quoted cell — consume until closing quote
-                        i++; // skip opening quote
-                        while (i < text.length) {
-                            if (text[i] === '"') {
-                                if (text[i + 1] === '"') {
-                                    cell += '"'; i += 2; // escaped quote
-                                } else {
-                                    i++; // closing quote
-                                    break;
-                                }
-                            } else {
-                                cell += text[i++];
-                            }
-                        }
-                        // Skip optional comma after closing quote
-                        if (text[i] === ',') i++;
-                    } else {
-                        // Unquoted cell — read until , or \n
-                        while (i < text.length && text[i] !== ',' && text[i] !== '\n') {
-                            cell += text[i++];
-                        }
-                        if (text[i] === ',') i++;
-                    }
-                    row.push(cell.trim());
-                }
-
-                // Skip blank rows
-                if (row.length > 0 && row.some(c => c !== '')) rows.push(row);
-            }
-            return rows;
-        }
-        // Opens the bulk question modal and pre-selects the currently viewed session
-        function openBulkQuestionModal() {
-            const bqSel = document.getElementById('bqSession');
-            const currentSid = document.getElementById('qSessionSelect').value;
-
-            // Populate bqSession dropdown from all sessions
-            bqSel.innerHTML = '<option value="">-- Select Session --</option>';
-            filteredSessions.forEach(s => {
-                bqSel.innerHTML += `<option value="${s.id}">[${s.id}] ${s.title} (${s.status})</option>`;
-            });
-
-            // Pre-select currently viewed session if any
-            if (currentSid) bqSel.value = currentSid;
-
-            // Reset file input
-            document.getElementById('bqFile').value = '';
-
-            openModal('bulkQuestionModal');
-        }
-
-        async function submitBulkQuestionsCsv() {
-            const sid = document.getElementById('bqSession').value;
-            const fileInput = document.getElementById('bqFile');
-
-            if (!sid) return showToast("Select a session", true);
-            if (!fileInput.files.length) return showToast("Select a CSV file", true);
-
-            const file = fileInput.files[0];
-            const reader = new FileReader();
-
-            reader.onload = async function (e) {
-                try {
-                    const rows = parseCsv(e.target.result);
-                    if (rows.length < 2) return showToast("CSV must have a header and at least one row", true);
-
-                    const header = rows[0].map(h => h.toLowerCase().trim());
-
-                    const questionsArray = [];
-                    for (let i = 1; i < rows.length; i++) {
-                        const row = rows[i];
-                        const q = { session_id: parseInt(sid), visible_examples: [], test_cases: [], language: 'python', constraints: [] };
-
-                        let testCaseCount = 0;
-                        for (let j = 0; j < header.length; j++) {
-                            const colName = header[j];
-                            const val = row[j] || '';
-
-                            if (colName === 'title') q.title = val;
-                            else if (colName === 'statement') q.statement = val.replaceAll('\\n', '\n');
-                            else if (colName === 'starter_code') q.starter_code = val.replaceAll('\\n', '\n');
-                            else if (colName.startsWith('ex') && colName.endsWith('_input')) {
-                                const idx = colName.match(/\d+/)[0];
-                                const outIdx = header.indexOf(`ex${idx}_output`);
-                                if (outIdx !== -1 && row[outIdx]) {
-                                    // Replace | with real newline for multi-line inputs
-                                    q.visible_examples.push({
-                                        input:  val.replaceAll('|', '\n'),
-                                        output: row[outIdx].replaceAll('|', '\n')
-                                    });
-                                }
-                            } else if (colName.startsWith('test') && colName.endsWith('_input')) {
-                                const idx = colName.match(/\d+/)[0];
-                                const outIdx = header.indexOf(`test${idx}_output`);
-                                const marksIdx = header.indexOf(`test${idx}_marks`);
-                                if (outIdx !== -1 && row[outIdx]) {
-                                    q.test_cases.push({
-                                        // Replace | with real newline for multi-line inputs
-                                        input:  val.replaceAll('|', '\n'),
-                                        output: row[outIdx].replaceAll('|', '\n'),
-                                        marks: marksIdx !== -1 && row[marksIdx] ? parseInt(row[marksIdx]) : 10
-                                    });
-                                }
-                            }
-                        }
-                        if (q.title && q.statement) questionsArray.push(q);
-                    }
-
-                    if (questionsArray.length === 0) return showToast("No valid questions found in CSV", true);
-
-                    const res = await fetch(`${API_BASE}/questions/bulk`, {
-                        method: 'POST',
-                        headers: getHeaders(),
-                        body: JSON.stringify({ session_id: parseInt(sid), questions: questionsArray })
-                    });
-
-                    const data = await res.json();
-                    if (res.ok) {
-                        showToast(`Uploaded! Created: ${data.created}, Skipped: ${data.skipped}`);
-                        if (data.errors && data.errors.length > 0) {
-                            showToast(`${data.errors.length} errors occurred. Check console.`, true);
-                        }
-                        closeModal('bulkQuestionModal');
-                        loadQuestionsForSession(sid);
-                    } else {
-                        showToast(data.detail || "Failed to upload bulk questions", true);
-                    }
-                } catch (err) {
-                    showToast("Failed to parse CSV file", true);
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        async function submitBulkStudentsCsv() {
-            const fileInput = document.getElementById('bsFile');
-            if (!fileInput.files.length) return showToast("Select a CSV file", true);
-
-            const file = fileInput.files[0];
-            const reader = new FileReader();
-
-            reader.onload = async function (e) {
-                try {
-                    const rows = parseCsv(e.target.result);
-                    if (rows.length < 2) return showToast("CSV must have a header and at least one row", true);
-
-                    const header = rows[0].map(h => h.toLowerCase().trim());
-                    // expected format: department, section, register number, name, year
-
-                    const deptIdx = header.findIndex(h => h.includes('dept') || h.includes('department'));
-                    const secIdx = header.findIndex(h => h.includes('sec') || h.includes('section'));
-                    const regIdx = header.findIndex(h => h.includes('reg') || h.includes('register'));
-                    const nameIdx = header.findIndex(h => h.includes('name'));
-                    const yearIdx = header.findIndex(h => h.includes('year'));
-
-                    if (deptIdx === -1 || secIdx === -1 || regIdx === -1 || nameIdx === -1 || yearIdx === -1) {
-                        return showToast("CSV missing required columns (department, section, register number, name, year)", true);
-                    }
-
-                    const studentsArray = [];
-                    for (let i = 1; i < rows.length; i++) {
-                        const row = rows[i];
-                        if (row.length < 5) continue;
-                        studentsArray.push({
-                            department: row[deptIdx],
-                            section: row[secIdx].toUpperCase(),
-                            registration_number: row[regIdx].toUpperCase(),
-                            name: row[nameIdx],
-                            year: row[yearIdx],
-                            batch: "2026" // Default batch for now
-                        });
-                    }
-
-                    if (studentsArray.length === 0) return showToast("No valid students found in CSV", true);
-
-                    const res = await fetch(`${API_BASE}/students/bulk`, {
-                        method: 'POST',
-                        headers: getHeaders(),
-                        body: JSON.stringify({ students: studentsArray })
-                    });
-
-                    const data = await res.json();
-                    if (res.ok) {
-                        showToast(`Uploaded! Created: ${data.created}, Skipped: ${data.skipped}`);
-                        if (data.errors && data.errors.length > 0) {
-                            showToast(`${data.errors.length} errors occurred. Check console.`, true);
-                        }
-                        closeModal('bulkStudentModal');
-                        loadInitialData();
-                    } else {
-                        showToast(data.detail || "Failed to upload bulk students", true);
-                    }
-                } catch (err) {
-                    showToast("Failed to parse CSV file", true);
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        // ── ASSIGNMENTS ───────────────────────────────────────────────
-        async function loadAssignmentsForSession(sid) {
-            const list = document.getElementById('assignmentsList');
-            if (!sid) return list.innerHTML = '';
-            const res = await fetch(`${API_BASE}/session/${sid}/assignments`, { headers: getHeaders() });
-            const data = await res.json();
-            list.innerHTML = '';
-            if (data.length === 0) return list.innerHTML = '<tr><td colspan="3" class="px-6 py-4 text-gray-500">No assignments in this session.</td></tr>';
-            data.forEach(a => {
-                list.innerHTML += `
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 font-medium text-gray-800">${a.student_name} <span class="text-xs text-gray-500 block font-mono">${a.student_registration} | ${a.student_department}, ${a.student_year} Year, Sec ${a.student_section}</span></td>
-                        <td class="px-6 py-4 text-blue-700">${a.question_title}</td>
-                        <td class="px-6 py-4 text-xs text-gray-500">${parseUTCDate(a.assigned_at).toLocaleString()}</td>
-                    </tr>
-                `;
-            });
-        }
-
-        async function loadQuestionsForMultiAssign(sid) {
-            const qSelect = document.getElementById('maQuestion');
-            if (!sid) {
-                qSelect.innerHTML = '<option value="">-- Auto Round Robin All Questions --</option>';
-                return;
-            }
-            const res = await fetch(`${API_BASE}/session/${sid}/questions`, { headers: getHeaders() });
-            const data = await res.json();
-            qSelect.innerHTML = '<option value="">-- Auto Round Robin All Questions --</option>';
-            data.forEach(q => qSelect.innerHTML += `<option value="${q.id}">${q.title}</option>`);
-        }
-
-        async function submitMultiAssign() {
-            const sid = document.getElementById('maSession').value;
-            const qid = document.getElementById('maQuestion').value;
-            const year = document.getElementById('maYear').value;
-            const sec = document.getElementById('maSec').value.trim().toUpperCase();
-
-            if (!sid) return showToast("Select Session", true);
-
-            const payload = {
-                session_id: parseInt(sid),
-                year: year === 'all' ? null : year,
-                section: sec === '' ? null : sec
-            };
-
-            if (qid) {
-                payload.question_id = parseInt(qid);
-            }
-
-            const res = await fetch(`${API_BASE}/assignment/bulk`, {
-                method: 'POST', headers: getHeaders(), body: JSON.stringify(payload)
-            });
-
-            const data = await res.json();
-            if (res.ok) {
-                closeModal('assignmentModal');
-                await loadInitialData();
-                showToast(data.message || "Assignment complete");
-                if (document.getElementById('aSessionSelect').value === sid) {
-                    loadAssignmentsForSession(sid);
-                }
-            } else {
-                showToast(data.detail || "Assignment failed", true);
-            }
-        }
-
-        // ── MONITOR ───────────────────────────────────────────────────
-        async function refreshMonitor() {
-            const sid = document.getElementById('mSessionSelect').value;
-            const grid = document.getElementById('monitorGrid');
-            if (!sid) return grid.innerHTML = '';
-
-            const res = await fetch(`${API_BASE}/session/${sid}/monitor`, { headers: getHeaders() });
-            const data = await res.json();
-
-            document.getElementById('mTotalCount').innerText = data.total_students;
-            document.getElementById('mOnlineCount').innerText = data.online_students;
-
-            grid.innerHTML = '';
-            if (data.students.length === 0) return grid.innerHTML = '<p class="text-gray-500 col-span-3">No students assigned to this session.</p>';
-            data.students.forEach(s => {
-                const color = s.is_online ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200';
-                const dot = s.is_online ? 'bg-green-500 animate-pulse' : 'bg-gray-300';
-                const subBadge = s.has_submitted ? `<span class="px-2 py-1 bg-purple-100 text-purple-800 text-[10px] font-bold rounded uppercase ml-2 border border-purple-200">Submitted</span>` : '';
-                grid.innerHTML += `
-                    <div class="${color} border p-4 rounded-xl shadow-sm transition">
-                        <div class="flex justify-between items-start">
-                            <div class="flex items-center space-x-3">
-                                <div class="w-3 h-3 rounded-full ${dot} shadow-sm"></div>
-                                <div>
-                                    <div class="font-bold text-gray-800 text-sm flex items-center">${s.name} ${subBadge}</div>
-                                    <div class="text-xs text-gray-500 font-mono">${s.registration_number} | ${s.year} Year, Sec ${s.section}</div>
-                                </div>
-                            </div>
-                            <div class="text-right text-[10px] text-gray-500">
-                                Run Count: <b class="text-gray-800">${s.run_count}</b><br>
-                                IP: ${s.machine_ip || '---'}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        // ── SUBMISSIONS ───────────────────────────────────────────────
-        let lastSubmissions = [];
-        async function refreshSubmissions() {
-            const sid = document.getElementById('subSessionSelect').value;
-            const list = document.getElementById('submissionsList');
-            if (!sid) return list.innerHTML = '';
-
-            const res = await fetch(`${API_BASE}/session/${sid}/submissions`, { headers: getHeaders() });
-            const data = await res.json();
-            lastSubmissions = data;
-
-            list.innerHTML = '';
-            if (data.length === 0) return list.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No submissions yet.</td></tr>';
-
-            data.forEach(s => {
-                // ── Type badge config ────────────────────────────────────
-                let typeColor, typeIcon, typeLabel, rowTint = '';
-                switch (s.submission_type) {
-                    case 'auto_tab_switch':
-                        typeColor = 'bg-red-100 text-red-800 border-red-300';
-                        typeIcon  = '🚨';
-                        typeLabel = 'Malpractice';
-                        rowTint   = 'bg-red-50';   // flag the entire row
-                        break;
-                    case 'auto_timer':
-                        typeColor = 'bg-yellow-100 text-yellow-800 border-yellow-300';
-                        typeIcon  = '⏰';
-                        typeLabel = 'Time Expired';
-                        break;
-                    case 'resubmission':
-                        typeColor = 'bg-blue-100 text-blue-800 border-blue-300';
-                        typeIcon  = '🔄';
-                        typeLabel = 'Re-submitted';
-                        break;
-                    default: // 'normal'
-                        typeColor = 'bg-green-100 text-green-800 border-green-300';
-                        typeIcon  = '✅';
-                        typeLabel = 'Submitted';
-                }
-
-                list.innerHTML += `
-                    <tr class="${rowTint} hover:brightness-95 transition">
-                        <td class="px-6 py-4 font-medium text-gray-800">${s.student_name} <span class="text-xs text-gray-500 block font-mono">${s.registration_number} | ${s.student_department}, ${s.student_year} Year, Sec ${s.student_section}</span></td>
-                        <td class="px-6 py-4 text-blue-700 text-sm font-medium">${s.question_title}</td>
-                        <td class="px-6 py-4">
-                            <span class="inline-flex items-center gap-1 px-2 py-1 border rounded text-[10px] uppercase font-bold tracking-wide ${typeColor}">
-                                ${typeIcon} ${typeLabel}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 font-bold text-center text-gray-600">${s.submit_count}</td>
-                        <td class="px-6 py-4 text-xs text-gray-500">${parseUTCDate(s.submitted_at).toLocaleString()}</td>
-                        <td class="px-6 py-4"><button onclick="viewCode(${s.id})" class="bg-gray-800 text-white hover:bg-black px-3 py-1 rounded text-xs font-bold transition">View Code</button></td>
-                    </tr>
-                `;
-            });
-        }
-
-        function viewCode(id) {
-            const s = lastSubmissions.find(x => x.id === id);
-            if (!s) return;
-            document.getElementById('codeViewContent').innerText = s.source_code || '# No code';
-            openModal('codeModal');
-        }
-
-    </script>
+    <!-- ── External JS modules (load order matters) ── -->
+    <script src="/static/js/common.js"></script>
+    <script src="/static/js/departments.js"></script>
+    <script src="/static/js/sessions.js"></script>
+    <script src="/static/js/questions.js"></script>
+    <script src="/static/js/students.js"></script>
+    <script src="/static/js/assignments.js"></script>
+    <script src="/static/js/monitor.js"></script>
+    <script src="/static/js/submissions.js"></script>
 </body>
 
 </html>

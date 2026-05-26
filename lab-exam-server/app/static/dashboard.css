@@ -1,0 +1,16 @@
+/* dashboard.css — Korelium Lab Exam Coordinator */
+body { font-family: 'Inter', sans-serif; background: #f1f5f9; }
+.panel { display: none; }
+.panel.active { display: block; }
+.stab-content { display: none; }
+.stab-content.active { display: block; }
+.session-item { cursor: pointer; border-left: 3px solid transparent; transition: all .15s; }
+.session-item:hover { background: #eff6ff; }
+.session-item.selected { border-left-color: #2563eb; background: #dbeafe; }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.dot.active { background: #22c55e; }
+.dot.draft  { background: #94a3b8; }
+.dot.closed { background: #ef4444; }
+.undo-toast { animation: slideUp .3s ease-out; }
+@keyframes slideUp { from { transform:translateY(40px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+.session-countdown { font-family: monospace; }
