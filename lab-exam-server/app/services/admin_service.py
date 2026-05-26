@@ -3,7 +3,7 @@
 # Project: Local Lab Exam System - Coordinator Server
 # Author: Pownkumar A (Founder of Korelium)
 # Created: 2026-05-15
-# Last Updated: 2026-05-15
+# Last Updated: 2026-05-26
 # Location: Tamil Nadu, India
 # Description: Business logic for all admin operations.
 #              Session management, question creation, student
@@ -12,9 +12,9 @@
 # ============================================================
 
 import json
-from datetime import datetime, timezone, timedelta
-IST = timezone(timedelta(hours=5, minutes=30))
+from datetime import timedelta
 from typing import Optional, List, Tuple
+from app.core.timezone import IST, to_ist, now_ist
 
 from sqlalchemy.orm import Session as DBSession
 
@@ -145,7 +145,7 @@ class AdminService:
                     f"Admin: auto-closed previous active session id={current_active.id}"
                 )
             # Set exact start and end time based on activation
-            session.start_time = datetime.now(IST)
+            session.start_time = now_ist()
             session.end_time = session.start_time + timedelta(minutes=session.duration_minutes)
 
         try:
@@ -171,9 +171,9 @@ class AdminService:
             language=s.language,
             duration_minutes=s.duration_minutes,
             status=s.status.value if hasattr(s.status, "value") else str(s.status),
-            start_time=s.start_time,
-            end_time=s.end_time,
-            created_at=s.created_at,
+            start_time=to_ist(s.start_time),
+            end_time=to_ist(s.end_time),
+            created_at=to_ist(s.created_at),
             question_count=q_count,
             student_count=a_count,
         )
@@ -534,7 +534,7 @@ class AdminService:
 
         assignments = self.assignment_repo.get_all_for_session(session_id)
         # Consider online = last heartbeat within 90 seconds
-        online_threshold = datetime.now(IST) - timedelta(seconds=90)
+        online_threshold = now_ist() - timedelta(seconds=90)
 
         student_statuses: List[StudentLiveStatus] = []
         online_count = 0
