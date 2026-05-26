@@ -1,7 +1,7 @@
 # ============================================================
 # File: app/models/question_file.py
 # Project: Local Lab Exam System - Coordinator Server
-# Author: Pownkumar A (Founder of Koreliurm)
+# Author: Pownkumar A (Founder of Korelium)
 # Created: 2026-05-26
 # Last Updated: 2026-05-26
 # Location: Tamil Nadu, India

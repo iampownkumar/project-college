@@ -1,7 +1,7 @@
 // ============================================================
 // File: lib/core/constants/app_constants.dart
-// Project: Lab Exam Client - Koreliurm Labs
-// Author: Pownkumar A (Founder of Koreliurm)
+// Project: Lab Exam Client - Korelium Labs
+// Author: Pownkumar A (Founder of Korelium)
 // Created: 2026-05-15
 // Last Updated: 2026-05-15
 // Location: Tamil Nadu, India
@@ -12,7 +12,7 @@
 class AppConstants {
   AppConstants._();
 
-  static const String appName = 'Koreliurm Labs — Exam Client';
+  static const String appName = 'Korelium Labs — Exam Client';
   static const String appVersion = '1.0.0';
   static const String clientVersion = '1.0.0';
 

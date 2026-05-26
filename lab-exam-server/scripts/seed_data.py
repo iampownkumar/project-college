@@ -2,7 +2,7 @@
 # ============================================================
 # File: scripts/seed_data.py
 # Project: Local Lab Exam System - Coordinator Server
-# Author: Pownkumar A (Founder of Koreliurm)
+# Author: Pownkumar A (Founder of Korelium)
 # Created: 2026-05-15
 # Last Updated: 2026-05-15
 # Location: Tamil Nadu, India
@@ -233,7 +233,7 @@ def assign_questions(
 def main():
     print("=" * 60)
     print(" Lab Exam Server - Seed Data Loader")
-    print(" Author: Pownkumar A (Founder of Koreliurm)")
+    print(" Author: Pownkumar A (Founder of Korelium)")
     print("=" * 60)
 
     seed_dir = os.path.abspath(settings.seed_data_dir)

@@ -1,5 +1,5 @@
 # ============================================================
-# Lab Exam Client - Koreliurm Labs
+# Lab Exam Client - Korelium Labs
 # Bundled Python Environment Requirements
 #
 # These packages are pre-installed in runtime/venv/ so students

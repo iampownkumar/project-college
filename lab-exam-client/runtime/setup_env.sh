@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================
 # File: runtime/setup_env.sh
-# Project: Lab Exam Client - Koreliurm Labs
+# Project: Lab Exam Client - Korelium Labs
 # Run this ONCE on each student machine to create the bundled
 # Python virtual environment with all required packages.
 #
@@ -22,7 +22,7 @@ VENV_DIR="$SCRIPT_DIR/venv"
 REQUIREMENTS="$SCRIPT_DIR/requirements.txt"
 
 echo "========================================"
-echo "  Koreliurm Lab Exam — Python Setup"
+echo "  Korelium Lab Exam — Python Setup"
 echo "========================================"
 echo ""
 

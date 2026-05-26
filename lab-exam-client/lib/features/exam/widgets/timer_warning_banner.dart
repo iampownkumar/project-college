@@ -1,7 +1,7 @@
 // ============================================================
 // File: lib/features/exam/widgets/timer_warning_banner.dart
-// Project: Lab Exam Client - Koreliurm Labs
-// Author: Pownkumar A (Founder of Koreliurm)
+// Project: Lab Exam Client - Korelium Labs
+// Author: Pownkumar A (Founder of Korelium)
 // Created: 2026-05-16
 // Last Updated: 2026-05-26
 // Location: Tamil Nadu, India

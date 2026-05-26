@@ -1,7 +1,7 @@
 // ============================================================
 // File: lib/features/auth/login_screen.dart
-// Project: Lab Exam Client - Koreliurm Labs
-// Author: Pownkumar A (Founder of Koreliurm)
+// Project: Lab Exam Client - Korelium Labs
+// Author: Pownkumar A (Founder of Korelium)
 // Created: 2026-05-15
 // Last Updated: 2026-05-26
 // Location: Tamil Nadu, India
@@ -188,7 +188,7 @@ class _LoginCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Koreliurm Labs',
+                      'Korelium Labs',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                         color: theme.colorScheme.primary,

@@ -1,7 +1,7 @@
 // ============================================================
 // File: lib/main.dart
-// Project: Lab Exam Client - Koreliurm Labs
-// Author: Pownkumar A (Founder of Koreliurm)
+// Project: Lab Exam Client - Korelium Labs
+// Author: Pownkumar A (Founder of Korelium)
 // Created: 2026-05-15
 // Last Updated: 2026-05-15
 // Location: Tamil Nadu, India
@@ -26,7 +26,7 @@ void main() async {
   final fullscreen = ConfigLoader.instance.exam.fullscreen;
 
   final options = WindowOptions(
-    title: 'Koreliurm Labs — Exam Client',
+    title: 'Korelium Labs — Exam Client',
     minimumSize: const Size(960, 600),
     center: true,
     backgroundColor: Colors.transparent,

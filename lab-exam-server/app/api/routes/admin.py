@@ -1,7 +1,7 @@
 # ============================================================
 # File: app/api/routes/admin.py
 # Project: Local Lab Exam System - Coordinator Server
-# Author: Pownkumar A (Founder of Koreliurm)
+# Author: Pownkumar A (Founder of Korelium)
 # Created: 2026-05-15
 # Last Updated: 2026-05-26
 # Changelog: Phase 4 — all routes protected by X-Admin-Key header

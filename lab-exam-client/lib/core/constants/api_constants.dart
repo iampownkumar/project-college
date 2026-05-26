@@ -1,7 +1,7 @@
 // ============================================================
 // File: lib/core/constants/api_constants.dart
-// Project: Lab Exam Client - Koreliurm Labs
-// Author: Pownkumar A (Founder of Koreliurm)
+// Project: Lab Exam Client - Korelium Labs
+// Author: Pownkumar A (Founder of Korelium)
 // Created: 2026-05-15
 // Last Updated: 2026-05-15
 // Location: Tamil Nadu, India

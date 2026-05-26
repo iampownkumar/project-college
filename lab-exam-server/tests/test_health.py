@@ -2,7 +2,7 @@
 # ============================================================
 # File: tests/test_health.py
 # Project: Local Lab Exam System - Coordinator Server
-# Author: Pownkumar A (Founder of Koreliurm)
+# Author: Pownkumar A (Founder of Korelium)
 # Created: 2026-05-15
 # Last Updated: 2026-05-15
 # Location: Tamil Nadu, India

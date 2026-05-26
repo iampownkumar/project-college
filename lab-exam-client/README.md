@@ -1,6 +1,6 @@
 # Lab Exam Client
 
-**Flutter Desktop App** — Student-side client for the Koreliurm Labs Exam System.
+**Flutter Desktop App** — Student-side client for the Korelium Labs Exam System.
 
 ## Project Layout
 
