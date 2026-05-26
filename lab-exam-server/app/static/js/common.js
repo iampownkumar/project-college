@@ -222,7 +222,8 @@ function updateStudentFilters() {
             maList.innerHTML += `<option value="${s.registration_number}">${s.registration_number} - ${s.name} (${s.section})</option>`;
         });
     }
-    renderStudents();
+    // Only call renderStudents if the student tab DOM still exists
+    if (document.getElementById('stuYearView')) renderStudents();
 }
 
 // ── Countdown ticker (runs every second) ──────────────────────

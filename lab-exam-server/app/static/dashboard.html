@@ -5,7 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lab Exam Coordinator Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/dashboard.css">
     <style>
         body {
             background-color: #f3f4f6;
@@ -100,46 +104,18 @@
 
         <div class="flex-1 flex overflow-hidden">
             <!-- Sidebar -->
-            <aside class="w-64 bg-gray-50 border-r border-gray-200 flex flex-col z-10 shrink-0">
-                <nav class="flex-1 p-4 space-y-2 overflow-y-auto mt-2">
-
-                    <button onclick="switchTab('departments')"
-                        class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg text-left tab-btn text-gray-600 hover:bg-gray-100"
-                        data-tab="departments">
-                        Departments
-                    </button>
+            <aside class="w-56 bg-gray-50 border-r border-gray-200 flex flex-col z-10 shrink-0">
+                <nav class="flex-1 p-4 space-y-1 overflow-y-auto mt-2">
                     <button onclick="switchTab('sessions')"
                         class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg text-left tab-btn active bg-blue-100 text-blue-700"
                         data-tab="sessions">
-                        Sessions
+                        📋 Sessions
                     </button>
-                    <button onclick="switchTab('questions')"
+                    <button onclick="switchTab('departments')"
                         class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg text-left tab-btn text-gray-600 hover:bg-gray-100"
-                        data-tab="questions">
-                        Questions
+                        data-tab="departments">
+                        🏢 Departments
                     </button>
-                    <button onclick="switchTab('students')"
-                        class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg text-left tab-btn text-gray-600 hover:bg-gray-100"
-                        data-tab="students">
-                        Students
-                    </button>
-                    <button onclick="switchTab('assignments')"
-                        class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg text-left tab-btn text-gray-600 hover:bg-gray-100"
-                        data-tab="assignments">
-                        Assignments
-                    </button>
-                    <button onclick="switchTab('monitor')"
-                        class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg text-left tab-btn text-gray-600 hover:bg-gray-100"
-                        data-tab="monitor">
-                        Live Monitor
-                    </button>
-                    <button onclick="switchTab('submissions')"
-                        class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg text-left tab-btn text-gray-600 hover:bg-gray-100"
-                        data-tab="submissions">
-                        Submissions
-                    </button>
-                </nav>
-
                 </nav>
             </aside>
 
@@ -203,190 +179,9 @@
                     </div>
                 </div>
 
-                <!-- QUESTIONS TAB -->
-                <div id="questions-tab" class="tab-content">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-3xl font-bold text-gray-800">Questions</h2>
-                        <button onclick="openBulkQuestionModal()"
-                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition flex items-center gap-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                            </svg>
-                            Upload Questions CSV
-                        </button>
-                    </div>
-                    <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Select Session to View
-                            Questions</label>
-                        <select id="qSessionSelect"
-                            class="w-full md:w-1/3 border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                            onchange="loadQuestionsForSession(this.value)">
-                            <option value="">-- Select Session --</option>
-                        </select>
-                    </div>
-                    <div id="questionsList" class="space-y-4"></div>
-                </div>
+                <!-- QUESTIONS / STUDENTS / ASSIGNMENTS / MONITOR / SUBMISSIONS -->
+                <!-- Removed: all managed inside the Session Detail slide-over panel -->
 
-                <!-- STUDENTS TAB -->
-                <div id="students-tab" class="tab-content">
-
-                    <!-- ── Top bar ── -->
-                    <div class="flex justify-between items-center mb-6">
-                        <div class="flex items-center gap-3">
-                            <!-- Back breadcrumb (hidden at top level) -->
-                            <button id="stuBackBtn" onclick="stuNavBack()"
-                                class="hidden items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M15 19l-7-7 7-7" />
-                                </svg>
-                                <span id="stuBackLabel">Back</span>
-                            </button>
-                            <h2 id="stuHeading" class="text-3xl font-bold text-gray-800">Students</h2>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <!-- CSV upload -->
-                            <button onclick="openModal('bulkStudentModal')"
-                                class="border border-green-500 text-green-700 hover:bg-green-50 px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition">⬆
-                                Bulk Upload CSV</button>
-                            <!-- Delete all -->
-                            <button onclick="deleteAllStudents()"
-                                class="border border-red-400 text-red-600 hover:bg-red-50 px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition">🗑
-                                Delete All</button>
-                            <!-- Add single -->
-                            <button onclick="openModal('studentModal')"
-                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm transition">+
-                                Add Student</button>
-                        </div>
-                    </div>
-
-                    <!-- ── LEVEL 0 : Year cards ── -->
-                    <div id="stuYearView">
-                        <p class="text-sm text-gray-500 mb-4">Click a year to browse sections and students.</p>
-                        <div id="yearCardGrid" class="grid grid-cols-2 md:grid-cols-4 gap-5"></div>
-                    </div>
-
-                    <!-- ── LEVEL 1 : Section cards ── -->
-                    <div id="stuSectionView" class="hidden">
-                        <p id="stuSectionSubtitle" class="text-sm text-gray-500 mb-4"></p>
-                        <div id="sectionCardGrid" class="grid grid-cols-2 md:grid-cols-4 gap-5"></div>
-                    </div>
-
-                    <!-- ── LEVEL 2 : Student table ── -->
-                    <div id="stuTableView" class="hidden">
-                        <p id="stuTableSubtitle" class="text-sm text-gray-500 mb-3"></p>
-                        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                            <table class="w-full text-left text-sm">
-                                <thead
-                                    class="bg-gray-50 text-gray-600 text-xs uppercase font-semibold border-b border-gray-200">
-                                    <tr>
-                                        <th class="px-6 py-4">#</th>
-                                        <th class="px-6 py-4">Reg No</th>
-                                        <th class="px-6 py-4">Name</th>
-                                        <th class="px-6 py-4">Department</th>
-                                        <th class="px-6 py-4">Section</th>
-                                        <th class="px-6 py-4">Year</th>
-                                        <th class="px-6 py-4">Status</th>
-                                        <th class="px-6 py-4 text-right">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="stuTableBody" class="divide-y divide-gray-100"></tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                </div>
-
-                <!-- ASSIGNMENTS TAB -->
-                <div id="assignments-tab" class="tab-content">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-3xl font-bold text-gray-800">Assignments</h2>
-                        <div class="flex space-x-2">
-                            <button onclick="openModal('assignmentModal')"
-                                class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-sm">+
-                                Assign to Class</button>
-                        </div>
-                    </div>
-                    <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Select Session</label>
-                        <select id="aSessionSelect"
-                            class="w-full md:w-1/3 border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                            onchange="loadAssignmentsForSession(this.value)">
-                            <option value="">-- Select Session --</option>
-                        </select>
-                    </div>
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                        <table class="w-full text-left text-sm">
-                            <thead
-                                class="bg-gray-50 text-gray-600 text-xs uppercase font-semibold border-b border-gray-200">
-                                <tr>
-                                    <th class="px-6 py-4">Student</th>
-                                    <th class="px-6 py-4">Assigned Question</th>
-                                    <th class="px-6 py-4">Time</th>
-                                </tr>
-                            </thead>
-                            <tbody id="assignmentsList" class="divide-y divide-gray-100"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- LIVE MONITOR TAB -->
-                <div id="monitor-tab" class="tab-content">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-3xl font-bold text-gray-800">Live Monitor</h2>
-                        <button onclick="refreshMonitor()" class="text-blue-600 hover:underline text-sm font-medium">↻
-                            Refresh</button>
-                    </div>
-                    <div class="mb-6 flex space-x-4 items-end">
-                        <div class="w-1/3">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Select Session</label>
-                            <select id="mSessionSelect"
-                                class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                                onchange="refreshMonitor()">
-                                <option value="">-- Select Session --</option>
-                            </select>
-                        </div>
-                        <div class="text-sm text-gray-600 pb-2">
-                            Online: <span id="mOnlineCount" class="font-bold text-green-600">0</span> / <span
-                                id="mTotalCount">0</span>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="monitorGrid"></div>
-                </div>
-
-                <!-- SUBMISSIONS TAB -->
-                <div id="submissions-tab" class="tab-content">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-3xl font-bold text-gray-800">Submissions</h2>
-                        <button onclick="refreshSubmissions()"
-                            class="text-blue-600 hover:underline text-sm font-medium">↻ Refresh</button>
-                    </div>
-                    <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Select Session</label>
-                        <select id="subSessionSelect"
-                            class="w-full md:w-1/3 border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                            onchange="refreshSubmissions()">
-                            <option value="">-- Select Session --</option>
-                        </select>
-                    </div>
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                        <table class="w-full text-left text-sm">
-                            <thead
-                                class="bg-gray-50 text-gray-600 text-xs uppercase font-semibold border-b border-gray-200">
-                                <tr>
-                                    <th class="px-6 py-4">Student</th>
-                                    <th class="px-6 py-4">Question</th>
-                                    <th class="px-6 py-4">Type</th>
-                                    <th class="px-6 py-4">Tries</th>
-                                    <th class="px-6 py-4">Time</th>
-                                    <th class="px-6 py-4">Code</th>
-                                </tr>
-                            </thead>
-                            <tbody id="submissionsList" class="divide-y divide-gray-100"></tbody>
-                        </table>
-                    </div>
-                </div>
         </div> <!-- End Data Container -->
         </main>
     </div>
@@ -685,6 +480,125 @@
         </div>
     </div>
 
+    <!-- ── Session Detail slide-over panel ── -->
+    <div id="sdBackdrop" class="sd-hidden" onclick="closeSessionDetail()"></div>
+
+    <div id="sdPanel" class="sd-slide-out">
+        <!-- Panel header -->
+        <div id="sdHeader">
+            <button id="sd-close-btn" onclick="closeSessionDetail()" title="Close">✕</button>
+            <h2 id="sd-title">Session</h2>
+            <div class="sd-header-meta">
+                <span id="sd-dept"></span>
+                <span id="sd-scheduled"></span>
+                <span id="sd-duration"></span>
+            </div>
+            <div class="sd-header-actions">
+                <span id="sd-status-badge" class="sd-status-badge sd-badge-draft">DRAFT</span>
+                <button id="sd-btn-activate" class="sd-hdr-btn sd-btn-activate" onclick="sdActivateSession()">⚡ Activate</button>
+                <button id="sd-btn-close-exam" class="sd-hdr-btn sd-btn-close-exam" onclick="sdCloseSession()" style="display:none">🔒 Close Exam</button>
+            </div>
+        </div>
+
+        <!-- Panel body -->
+        <div id="sdBody">
+
+            <!-- ── Questions section ── -->
+            <div class="sd-section">
+                <div class="sd-section-header" onclick="sdToggleSection('sd-questions-body','sd-q-chev')">
+                    <div class="sd-section-title-row">
+                        <span class="sd-section-icon">📝</span>
+                        <span class="sd-section-title">Questions</span>
+                        <span class="sd-count-chip" id="sd-q-count">0</span>
+                    </div>
+                    <div class="sd-section-right">
+                        <button class="sd-btn-sm sd-btn-indigo" onclick="event.stopPropagation(); sdOpenAddQuestion()">
+                            + Add Question
+                        </button>
+                        <span class="sd-chevron-lg" id="sd-q-chev" style="transform:rotate(90deg)">›</span>
+                    </div>
+                </div>
+                <div id="sd-questions-body" class="sd-section-body">
+                    <div id="sd-questions-list" style="padding-top:10px">
+                        <p class="sd-loading">Loading questions…</p>
+                    </div>
+                    <div class="sd-add-q-strip" onclick="sdOpenAddQuestion()">
+                        + Add Question
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Students section ── -->
+            <div class="sd-section">
+                <div class="sd-section-header" onclick="sdToggleSection('sd-students-body','sd-stu-chev')">
+                    <div class="sd-section-title-row">
+                        <span class="sd-section-icon">🎓</span>
+                        <span class="sd-section-title">Students</span>
+                        <span class="sd-count-chip" id="sd-stu-count">…</span>
+                        <span class="sd-count-chip green" id="sd-stu-submitted" title="Submitted">… ✅</span>
+                    </div>
+                    <div class="sd-section-right">
+                        <button class="sd-btn-sm sd-btn-green" onclick="event.stopPropagation(); sdOpenAssign()">
+                            Assign Now
+                        </button>
+                        <button class="sd-btn-sm sd-btn-ghost" onclick="event.stopPropagation(); sdOpenAssign()">
+                            Re-assign
+                        </button>
+                        <span class="sd-chevron-lg" id="sd-stu-chev" style="transform:rotate(90deg)">›</span>
+                    </div>
+                </div>
+                <div id="sd-students-body" class="sd-section-body">
+                    <div class="sd-stu-summary">
+                        <div class="sd-stu-stat">
+                            <span class="sd-big-num" id="sd-stu-count-big">…</span>
+                            <span>assigned</span>
+                        </div>
+                        <div class="sd-stu-stat">
+                            <span class="sd-big-num" id="sd-stu-sub-big">…</span>
+                            <span>submitted</span>
+                        </div>
+                    </div>
+                    <div style="padding:0 0 8px; display:flex; gap:8px;">
+                        <button class="sd-btn-sm sd-btn-green" onclick="sdOpenAssign()">Assign Now</button>
+                        <button class="sd-btn-sm sd-btn-ghost" onclick="sdOpenAssign()">Re-assign</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Live Monitor section ── -->
+            <div class="sd-section">
+                <div class="sd-section-header" id="sd-monitor-hdr" onclick="sdToggleMonitor()">
+                    <div class="sd-section-title-row">
+                        <span class="sd-section-icon">📡</span>
+                        <span class="sd-section-title">Live Monitor</span>
+                        <span class="sd-live-pulse" id="sd-live-badge" style="display:none">
+                            <span class="sd-live-dot"></span> LIVE
+                        </span>
+                    </div>
+                    <div class="sd-section-right">
+                        <div class="sd-monitor-stat" style="margin-right:4px">
+                            <span class="sd-stat-dot green"></span>
+                            <span class="sd-stat-num" id="sd-online-count">0</span>
+                            <span style="font-size:11px;color:#64748b">online</span>
+                        </div>
+                        <div class="sd-monitor-stat" style="margin-right:8px">
+                            <span class="sd-stat-dot purple"></span>
+                            <span class="sd-stat-num" id="sd-submitted-count">0</span>
+                            <span style="font-size:11px;color:#64748b">submitted</span>
+                        </div>
+                        <span class="sd-chevron-lg" id="sd-monitor-chev">›</span>
+                    </div>
+                </div>
+                <div id="sd-monitor-body" style="display:none">
+                    <div id="sd-monitor-grid">
+                        <p class="sd-empty" style="padding:14px 24px">Select an active session to see live data.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- end #sdBody -->
+    </div><!-- end #sdPanel -->
+
     <!-- ── External JS modules (load order matters) ── -->
     <script src="/static/js/common.js"></script>
     <script src="/static/js/departments.js"></script>
@@ -694,6 +608,7 @@
     <script src="/static/js/assignments.js"></script>
     <script src="/static/js/monitor.js"></script>
     <script src="/static/js/submissions.js"></script>
+    <script src="/static/js/session_detail.js"></script>
 </body>
 
 </html>

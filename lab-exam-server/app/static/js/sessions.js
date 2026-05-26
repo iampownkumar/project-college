@@ -42,7 +42,12 @@ function renderSessions() {
         list.innerHTML += `
             <tr class="hover:bg-gray-50">
                 <td class="px-6 py-4">${s.id}</td>
-                <td class="px-6 py-4 font-medium text-gray-900">${s.title}</td>
+                <td class="px-6 py-4 font-medium text-gray-900">
+                    <button onclick="openSessionDetail(${s.id})"
+                        class="text-left hover:text-indigo-700 transition font-semibold">
+                        ${s.title}
+                    </button>
+                </td>
                 <td class="px-6 py-4">${s.department}</td>
                 <td class="px-6 py-4 text-xs text-gray-500">
                     ${timeStr}${endStr}${activeTimer}<br>
@@ -53,6 +58,7 @@ function renderSessions() {
                     ${scheduledBadge}
                 </td>
                 <td class="px-6 py-4 text-right space-x-2">
+                    <button onclick="openSessionDetail(${s.id})" class="sd-open-btn">Open →</button>
                     ${s.status === 'draft' ? `<button onclick="updateSessionStatus(${s.id}, 'active')" class="text-green-600 hover:text-green-900 text-xs font-bold border border-green-200 bg-green-50 px-2 py-1 rounded shadow-sm">Activate</button>` : ''}
                     ${s.status === 'active' ? `<button onclick="updateSessionStatus(${s.id}, 'closed')" class="text-red-600 hover:text-red-900 text-xs font-bold border border-red-200 bg-red-50 px-2 py-1 rounded shadow-sm">Close Exam</button>` : ''}
                     <button onclick="deleteSession(${s.id})" class="text-red-600 hover:text-red-900 text-xs font-bold border border-red-200 bg-red-50 px-2 py-1 rounded shadow-sm">Delete</button>
