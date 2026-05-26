@@ -195,7 +195,8 @@ class ExamProvider extends ChangeNotifier {
       });
 
       _interactiveProcess!.stderr.transform(utf8.decoder).listen((data) {
-        _consoleLines.add('STDERR: $data');
+        // Append stderr inline — no prefix, same buffer
+        _consoleLines.add(data);
         if (!_disposed) notifyListeners();
       });
 
@@ -222,7 +223,9 @@ class ExamProvider extends ChangeNotifier {
 
   void sendConsoleInput(String text) {
     if (_interactiveProcess != null) {
-      _consoleLines.add('> $text\n');
+      // Echo the typed text + newline into the buffer so the
+      // terminal shows a complete conversation without a PTY.
+      _consoleLines.add('$text\n');
       _interactiveProcess!.stdin.writeln(text);
       notifyListeners();
     }

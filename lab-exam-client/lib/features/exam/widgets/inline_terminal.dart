@@ -5,21 +5,23 @@
 // Created: 2026-05-26
 // Last Updated: 2026-05-26
 // Location: Tamil Nadu, India
-// Description: True interactive terminal inside the Console tab.
-//              Renders all output (stdout + stderr) in a scrollable
-//              monospace buffer. When the process is running, a blinking
-//              cursor input line appears at the bottom — exactly like
-//              a real terminal. The student types and presses Enter to
-//              send each line to the Python process stdin.
+// Description: Terminal-style console panel.
 //
-//  Key behaviours:
-//   - No separate "Custom Input" field needed.
-//   - input("prompt") text appears in the output buffer because Python
-//     writes it to stdout (unbuffered -u flag).
-//   - After Enter, the typed line is echoed into the buffer with "> "
-//     prefix so the student sees a natural conversation flow.
-//   - Auto-scrolls to bottom on new output.
-//   - Ctrl+C sends SIGTERM to stop the running process.
+//  Visual design:
+//   - All stdout/stderr output is rendered as a single continuous
+//     monospace text block (no bullet-point list, no coloured sections).
+//   - When the process is running and waiting for input, an inline
+//     cursor appears at the very end of the output — the student types
+//     there and the typed text is appended to the same visual line.
+//   - On Enter, the typed text is sent to stdin and appended to the
+//     output buffer so the student can see what they typed.
+//   - The effect is indistinguishable from a real terminal.
+//
+//  Technical approach (no PTY needed):
+//   - Python runs with -u (unbuffered) so input() prompts flush before
+//     blocking, making the prompt appear before the cursor.
+//   - stdout/stderr are captured as streams from Process.
+//   - Input is written to Process.stdin via sendConsoleInput().
 // ============================================================
 
 import 'package:flutter/material.dart';
@@ -46,339 +48,147 @@ class InlineTerminal extends StatefulWidget {
 
 class _InlineTerminalState extends State<InlineTerminal>
     with SingleTickerProviderStateMixin {
-  final _scrollCtrl = ScrollController();
-  final _textCtrl = TextEditingController();
-  final _focusNode = FocusNode();
+  final ScrollController _scroll = ScrollController();
+  final TextEditingController _input = TextEditingController();
+  final FocusNode _focus = FocusNode();
 
-  // Blinking cursor animation
-  late AnimationController _blinkCtrl;
-  late Animation<double> _blinkAnim;
+  late AnimationController _blink;
+
+  static const _monoStyle = TextStyle(
+    fontFamily: 'monospace',
+    fontSize: 13.5,
+    height: 1.6,
+  );
 
   @override
   void initState() {
     super.initState();
-    _blinkCtrl = AnimationController(
+    _blink = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 530),
+      duration: const Duration(milliseconds: 500),
     )..repeat(reverse: true);
-    _blinkAnim = Tween<double>(begin: 0.0, end: 1.0).animate(_blinkCtrl);
   }
 
   @override
   void dispose() {
-    _scrollCtrl.dispose();
-    _textCtrl.dispose();
-    _focusNode.dispose();
-    _blinkCtrl.dispose();
+    _scroll.dispose();
+    _input.dispose();
+    _focus.dispose();
+    _blink.dispose();
     super.dispose();
   }
 
-  void _scrollToBottom() {
+  // ── Scroll to bottom ──────────────────────────────────────
+  void _toBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollCtrl.hasClients &&
-          _scrollCtrl.position.hasContentDimensions &&
-          _scrollCtrl.position.maxScrollExtent > 0) {
-        _scrollCtrl.animateTo(
-          _scrollCtrl.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 100),
+      if (_scroll.hasClients) {
+        _scroll.animateTo(
+          _scroll.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 80),
           curve: Curves.easeOut,
         );
       }
     });
   }
 
-  void _submitLine() {
-    final text = _textCtrl.text;
+  // ── Submit a line of input ─────────────────────────────────
+  void _send() {
+    final text = _input.text;
+    _input.clear();
     widget.exam.sendConsoleInput(text);
-    _textCtrl.clear();
-    _focusNode.requestFocus();
-    _scrollToBottom();
+    _focus.requestFocus();
+    _toBottom();
   }
 
-  void _stopProcess() {
-    widget.exam.stopInteractiveRun();
-  }
+  // ── Build the raw text block from consoleLines ─────────────
+  // We join all lines into one string so it renders as a continuous
+  // terminal output — no per-line containers, no padding gaps.
+  String _buildBuffer(List<String> lines) => lines.join('');
 
   @override
   Widget build(BuildContext context) {
     final exam = widget.exam;
-    final textColor = widget.textColor;
     final isRunning = exam.isInteractiveRunning;
     final lines = exam.consoleLines;
+    final theme = Theme.of(context);
+    final textColor = widget.textColor;
 
-    if (lines.isNotEmpty) _scrollToBottom();
+    // Scroll whenever content changes
+    if (lines.isNotEmpty || isRunning) _toBottom();
+    if (isRunning) {
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) => _focus.requestFocus());
+    }
 
-    // ── Empty state ──────────────────────────────────────────
+    // ── Empty idle state ─────────────────────────────────────
     if (!isRunning && lines.isEmpty && exam.lastResult == null) {
-      return Container(
-        color: widget.consoleBg,
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.terminal_rounded,
-                  size: 32, color: textColor.withValues(alpha: 0.2)),
-              const SizedBox(height: 12),
-              Text(
-                'Click  Run Console  to run interactively.\n'
-                'Your code runs live — type inputs directly here.',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: textColor.withValues(alpha: 0.35),
-                  fontFamily: 'monospace',
-                  fontSize: 12,
-                  height: 1.6,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+      return _IdleHint(textColor: textColor, consoleBg: widget.consoleBg);
     }
 
-    // ── Static result (after Run Tests / batch run) ──────────
+    // ── Batch run result (Run Tests) ─────────────────────────
     if (!isRunning && lines.isEmpty && exam.lastResult != null) {
-      final result = exam.lastResult!;
-      return Container(
-        color: widget.consoleBg,
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (result.stdout.isNotEmpty) ...[
-                _OutputSection(
-                    label: 'STDOUT', content: result.stdout, color: textColor),
-                const SizedBox(height: 12),
-              ],
-              if (result.stderr.isNotEmpty)
-                _OutputSection(
-                    label: 'STDERR',
-                    content: result.stderr,
-                    color: const Color(0xFFEF4444)),
-              if (result.stdout.isEmpty && result.stderr.isEmpty)
-                Text(
-                  '(No output)',
-                  style: TextStyle(
-                    color: textColor.withValues(alpha: 0.4),
-                    fontFamily: 'monospace',
-                    fontSize: 13,
-                  ),
-                ),
-            ],
-          ),
-        ),
+      return _BatchResult(
+        result: exam.lastResult!,
+        textColor: textColor,
+        consoleBg: widget.consoleBg,
       );
     }
 
-    // ── Live interactive terminal ─────────────────────────────
+    // ── Live / finished terminal ──────────────────────────────
+    final buffer = _buildBuffer(lines);
+
     return GestureDetector(
-      onTap: () => _focusNode.requestFocus(),
+      onTap: () => _focus.requestFocus(),
+      behavior: HitTestBehavior.opaque,
       child: Container(
         color: widget.consoleBg,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // ── Running indicator bar ──────────────────────────
-            if (isRunning)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
-                color: const Color(0xFF1E1B2E),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: Colors.greenAccent,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.greenAccent.withValues(alpha: 0.6),
-                            blurRadius: 6,
-                          )
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'RUNNING  —  type below and press Enter to send input',
-                      style: TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 11,
-                        color: textColor.withValues(alpha: 0.5),
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-                    const Spacer(),
-                    InkWell(
-                      onTap: _stopProcess,
-                      borderRadius: BorderRadius.circular(4),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEF4444).withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(
-                            color: const Color(0xFFEF4444).withValues(alpha: 0.4),
-                          ),
-                        ),
-                        child: const Text(
-                          '■ Stop',
-                          style: TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 11,
-                            color: Color(0xFFEF4444),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            // ── Top status chip ────────────────────────────────
+            _StatusBar(
+              isRunning: isRunning,
+              textColor: textColor,
+              isDark: widget.isDark,
+              onStop: exam.stopInteractiveRun,
+              blink: _blink,
+            ),
 
-            // ── Output buffer ──────────────────────────────────
+            // ── Output + inline input ──────────────────────────
             Expanded(
-              child: KeyboardListener(
-                focusNode: FocusNode(),
-                onKeyEvent: (event) {
-                  // Ctrl+C → stop process
-                  if (event is KeyDownEvent &&
-                      event.logicalKey == LogicalKeyboardKey.keyC &&
-                      HardwareKeyboard.instance.isControlPressed) {
-                    _stopProcess();
-                  }
-                },
-                child: ListView.builder(
-                  controller: _scrollCtrl,
-                  padding: const EdgeInsets.fromLTRB(14, 10, 14, 4),
-                  itemCount: lines.length,
-                  itemBuilder: (context, index) {
-                    final line = lines[index];
-                    final isStderr = line.startsWith('STDERR:');
-                    final isInput = line.startsWith('> ');
-                    final isExit = line.startsWith('\n[Process');
-                    Color lineColor;
-                    if (isStderr) {
-                      lineColor = const Color(0xFFEF4444);
-                    } else if (isInput) {
-                      lineColor = const Color(0xFF818CF8); // violet for typed input
-                    } else if (isExit) {
-                      lineColor = textColor.withValues(alpha: 0.38);
-                    } else {
-                      lineColor = textColor;
-                    }
-                    return SelectableText(
-                      line,
-                      style: TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 13,
-                        height: 1.55,
-                        color: lineColor,
+              child: SingleChildScrollView(
+                controller: _scroll,
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // All output as a single text block
+                    if (buffer.isNotEmpty)
+                      SelectableText(
+                        buffer,
+                        style: _monoStyle.copyWith(color: textColor),
                       ),
-                    );
-                  },
+
+                    // ── Inline input row ───────────────────────
+                    // Appears right below the last output line when
+                    // process is running, indistinguishable from a
+                    // real terminal prompt line.
+                    if (isRunning)
+                      _InlineInput(
+                        controller: _input,
+                        focus: _focus,
+                        textColor: textColor,
+                        isDark: widget.isDark,
+                        onSend: _send,
+                        blink: _blink,
+                      ),
+
+                    // A tiny spacer so content isn't clipped
+                    const SizedBox(height: 8),
+                  ],
                 ),
               ),
             ),
-
-            // ── Input line ─────────────────────────────────────
-            if (isRunning)
-              Container(
-                color: widget.isDark
-                    ? const Color(0xFF0F0E1A)
-                    : const Color(0xFFF1F5F9),
-                padding: const EdgeInsets.fromLTRB(14, 6, 14, 10),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // Blinking ">" cursor prompt
-                    AnimatedBuilder(
-                      animation: _blinkAnim,
-                      builder: (_, __) => Text(
-                        '❯',
-                        style: TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 14,
-                          color: const Color(0xFF818CF8)
-                              .withValues(alpha: _blinkAnim.value),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextField(
-                        controller: _textCtrl,
-                        focusNode: _focusNode,
-                        autofocus: true,
-                        style: TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 13,
-                          color: textColor,
-                          height: 1.5,
-                        ),
-                        cursorColor: const Color(0xFF818CF8),
-                        cursorWidth: 2,
-                        decoration: const InputDecoration(
-                          border: InputBorder.none,
-                          isDense: true,
-                          contentPadding: EdgeInsets.zero,
-                          hintText: 'Type your input here…',
-                          hintStyle: TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 12,
-                            color: Color(0x44FFFFFF),
-                          ),
-                        ),
-                        onSubmitted: (_) => _submitLine(),
-                      ),
-                    ),
-                    // Enter button as a visual cue
-                    InkWell(
-                      onTap: _submitLine,
-                      borderRadius: BorderRadius.circular(4),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF818CF8).withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(
-                            color:
-                                const Color(0xFF818CF8).withValues(alpha: 0.35),
-                          ),
-                        ),
-                        child: const Text(
-                          'Enter ↵',
-                          style: TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 11,
-                            color: Color(0xFF818CF8),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else if (lines.isNotEmpty)
-              // Process ended — show restart hint
-              Container(
-                color: widget.consoleBg,
-                padding: const EdgeInsets.fromLTRB(14, 6, 14, 10),
-                child: Text(
-                  'Process finished. Click  Run Console  to run again.',
-                  style: TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 11,
-                    color: textColor.withValues(alpha: 0.35),
-                  ),
-                ),
-              ),
           ],
         ),
       ),
@@ -386,42 +196,293 @@ class _InlineTerminalState extends State<InlineTerminal>
   }
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────
+// ── Status bar ─────────────────────────────────────────────────────────────
 
-class _OutputSection extends StatelessWidget {
-  final String label;
-  final String content;
-  final Color color;
+class _StatusBar extends StatelessWidget {
+  final bool isRunning;
+  final Color textColor;
+  final bool isDark;
+  final VoidCallback onStop;
+  final AnimationController blink;
 
-  const _OutputSection({
-    required this.label,
-    required this.content,
-    required this.color,
+  const _StatusBar({
+    required this.isRunning,
+    required this.textColor,
+    required this.isDark,
+    required this.onStop,
+    required this.blink,
   });
 
   @override
-  Widget build(BuildContext context) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      color: isDark ? const Color(0xFF13111F) : const Color(0xFFE2E8F0),
+      child: Row(
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              color: color.withValues(alpha: 0.6),
-              letterSpacing: 1.2,
+          if (isRunning) ...[
+            AnimatedBuilder(
+              animation: blink,
+              builder: (_, __) => Container(
+                width: 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color.lerp(
+                    Colors.greenAccent,
+                    Colors.green.shade800,
+                    blink.value,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.greenAccent.withValues(alpha: 0.5),
+                      blurRadius: 5,
+                    )
+                  ],
+                ),
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          SelectableText(
-            content,
-            style: TextStyle(
-              fontFamily: 'monospace',
-              fontSize: 13,
-              color: color,
-              height: 1.5,
+            const SizedBox(width: 7),
+            Text(
+              'RUNNING',
+              style: TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 11,
+                letterSpacing: 0.8,
+                color: textColor.withValues(alpha: 0.5),
+              ),
             ),
-          ),
+          ] else ...[
+            Icon(Icons.check_circle_outline,
+                size: 12, color: textColor.withValues(alpha: 0.35)),
+            const SizedBox(width: 6),
+            Text(
+              'FINISHED',
+              style: TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 11,
+                letterSpacing: 0.8,
+                color: textColor.withValues(alpha: 0.35),
+              ),
+            ),
+          ],
+          const Spacer(),
+          if (isRunning)
+            InkWell(
+              onTap: onStop,
+              borderRadius: BorderRadius.circular(4),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(
+                    color: const Color(0xFFEF4444).withValues(alpha: 0.35),
+                  ),
+                ),
+                child: const Text(
+                  '■ Stop',
+                  style: TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 11,
+                    color: Color(0xFFEF4444),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Inline input (appears at end of output, no visible box) ────────────────
+
+class _InlineInput extends StatelessWidget {
+  final TextEditingController controller;
+  final FocusNode focus;
+  final Color textColor;
+  final bool isDark;
+  final VoidCallback onSend;
+  final AnimationController blink;
+
+  const _InlineInput({
+    required this.controller,
+    required this.focus,
+    required this.textColor,
+    required this.isDark,
+    required this.onSend,
+    required this.blink,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // Blinking block cursor — signals "waiting for input"
+        AnimatedBuilder(
+          animation: blink,
+          builder: (_, __) => Container(
+            width: 8,
+            height: 15,
+            color: const Color(0xFF818CF8).withValues(alpha: blink.value),
+          ),
+        ),
+        const SizedBox(width: 2),
+        // Completely borderless text field — same font as output
+        Expanded(
+          child: TextField(
+            controller: controller,
+            focusNode: focus,
+            autofocus: true,
+            style: const TextStyle(
+              fontFamily: 'monospace',
+              fontSize: 13.5,
+              height: 1.6,
+            ),
+            cursorColor: const Color(0xFF818CF8),
+            cursorWidth: 2,
+            decoration: const InputDecoration(
+              border: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              enabledBorder: InputBorder.none,
+              isDense: true,
+              contentPadding: EdgeInsets.zero,
+            ),
+            onSubmitted: (_) => onSend(),
+          ),
+        ),
+        // Enter key hint — subtle, doesn't break terminal feel
+        GestureDetector(
+          onTap: onSend,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 6),
+            child: Text(
+              '↵',
+              style: TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 15,
+                color: const Color(0xFF818CF8).withValues(alpha: 0.5),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Idle hint ───────────────────────────────────────────────────────────────
+
+class _IdleHint extends StatelessWidget {
+  final Color textColor;
+  final Color consoleBg;
+  const _IdleHint({required this.textColor, required this.consoleBg});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: consoleBg,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.terminal_rounded,
+                size: 32, color: textColor.withValues(alpha: 0.18)),
+            const SizedBox(height: 12),
+            Text(
+              'Click  Run Console  to run your code interactively.\n'
+              'Type inputs directly here when prompted.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: textColor.withValues(alpha: 0.32),
+                fontFamily: 'monospace',
+                fontSize: 12,
+                height: 1.65,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Batch result (used after Run Tests / runCode) ───────────────────────────
+
+class _BatchResult extends StatelessWidget {
+  final dynamic result; // RunnerResult
+  final Color textColor;
+  final Color consoleBg;
+
+  const _BatchResult({
+    required this.result,
+    required this.textColor,
+    required this.consoleBg,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: consoleBg,
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if ((result.stdout as String).isNotEmpty) ...[
+              _label('STDOUT', textColor),
+              const SizedBox(height: 4),
+              SelectableText(
+                result.stdout as String,
+                style: TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 13.5,
+                  height: 1.6,
+                  color: textColor,
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+            if ((result.stderr as String).isNotEmpty) ...[
+              _label('STDERR', const Color(0xFFEF4444)),
+              const SizedBox(height: 4),
+              SelectableText(
+                result.stderr as String,
+                style: const TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 13.5,
+                  height: 1.6,
+                  color: Color(0xFFEF4444),
+                ),
+              ),
+            ],
+            if ((result.stdout as String).isEmpty &&
+                (result.stderr as String).isEmpty)
+              Text(
+                '(No output)',
+                style: TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 13,
+                  color: textColor.withValues(alpha: 0.4),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _label(String text, Color color) => Text(
+        text,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          color: color.withValues(alpha: 0.55),
+          letterSpacing: 1.2,
+        ),
       );
 }
