@@ -1,0 +1,16 @@
+# ============================================================
+# File: requirements.txt
+# Project: Local Lab Exam System - Coordinator Server
+# Author: Pownkumar A (Founder of Koreliurm)
+# Created: 2026-05-15
+# Last Updated: 2026-05-15
+# Location: Tamil Nadu, India
+# ============================================================
+
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+sqlalchemy>=2.0.30
+pydantic>=2.10.0
+pydantic-settings>=2.5.0
+python-dotenv>=1.0.1
+httpx>=0.27.0

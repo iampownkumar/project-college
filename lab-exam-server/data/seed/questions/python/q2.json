@@ -1,0 +1,26 @@
+{
+  "id": "py_q2",
+  "language": "python",
+  "title": "Sum of Two Numbers",
+  "statement": "Write a Python program that reads two integers from the user and prints their sum.",
+  "starter_code": "# Read two integers and print their sum\na = int(input())\nb = int(input())\n# Write your solution below\n",
+  "visible_examples": [
+    {
+      "input": "3\n7",
+      "output": "10"
+    },
+    {
+      "input": "100\n200",
+      "output": "300"
+    }
+  ],
+  "constraints": [
+    "Use Python only",
+    "Both numbers will be positive integers",
+    "Numbers will be within the range 1 to 10000"
+  ],
+  "metadata": {
+    "difficulty": "easy",
+    "marks": 10
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "id": "py_q4",
+  "language": "python",
+  "title": "Palindrome Checker",
+  "statement": "Write a Python program that reads a string from input and prints `True` if it is a palindrome, or `False` otherwise.\n\nA palindrome is a word that reads the same forwards and backwards (case-insensitive).\n\nDo NOT use any built-in `reversed()` function or slicing tricks — compare character by character.",
+  "starter_code": "def is_palindrome(s):\n    # Write your solution here (compare char by char)\n    pass\n\ns = input().strip()\nprint(is_palindrome(s))\n",
+  "visible_examples": [
+    {
+      "input": "racecar",
+      "output": "True"
+    },
+    {
+      "input": "hello",
+      "output": "False"
+    },
+    {
+      "input": "Madam",
+      "output": "True"
+    }
+  ],
+  "test_cases": [
+    { "input": "racecar", "expected_output": "True",  "marks": 2 },
+    { "input": "hello",   "expected_output": "False", "marks": 2 },
+    { "input": "Madam",   "expected_output": "True",  "marks": 2 },
+    { "input": "level",   "expected_output": "True",  "marks": 2 },
+    { "input": "Python",  "expected_output": "False", "marks": 2 }
+  ],
+  "constraints": [
+    "Input string will only contain alphabetic characters",
+    "Comparison must be case-insensitive",
+    "Do not use slicing like s[::-1]",
+    "Length of string: 1 <= len(s) <= 100"
+  ],
+  "metadata": {
+    "difficulty": "easy",
+    "marks": 10,
+    "topic": "strings"
+  }
+}

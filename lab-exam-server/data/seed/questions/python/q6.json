@@ -1,0 +1,38 @@
+{
+  "id": "py_q6",
+  "language": "python",
+  "title": "Fibonacci Series",
+  "statement": "Write a Python program that reads a positive integer `n` from input and prints the first `n` terms of the Fibonacci series separated by spaces.\n\nThe Fibonacci series starts: 0 1 1 2 3 5 8 13 ...\n\nEach term is the sum of the two preceding terms.",
+  "starter_code": "n = int(input())\n\n# Write your solution here\n# Print n Fibonacci numbers separated by spaces\n",
+  "visible_examples": [
+    {
+      "input": "5",
+      "output": "0 1 1 2 3"
+    },
+    {
+      "input": "8",
+      "output": "0 1 1 2 3 5 8 13"
+    },
+    {
+      "input": "1",
+      "output": "0"
+    }
+  ],
+  "test_cases": [
+    { "input": "5",  "expected_output": "0 1 1 2 3",              "marks": 2 },
+    { "input": "8",  "expected_output": "0 1 1 2 3 5 8 13",        "marks": 2 },
+    { "input": "1",  "expected_output": "0",                        "marks": 2 },
+    { "input": "2",  "expected_output": "0 1",                      "marks": 2 },
+    { "input": "10", "expected_output": "0 1 1 2 3 5 8 13 21 34",   "marks": 2 }
+  ],
+  "constraints": [
+    "1 <= n <= 20",
+    "Print numbers separated by a single space with no trailing space",
+    "Do not use recursion — use a loop"
+  ],
+  "metadata": {
+    "difficulty": "medium",
+    "marks": 10,
+    "topic": "loops"
+  }
+}

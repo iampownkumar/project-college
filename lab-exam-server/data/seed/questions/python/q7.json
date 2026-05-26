@@ -1,0 +1,39 @@
+{
+  "id": "py_q7",
+  "language": "python",
+  "title": "Second Largest Number",
+  "statement": "Write a Python program that reads `n` integers (one per line) and prints the second largest unique number among them.\n\nThe first line of input is `n` (number of integers), followed by `n` integers each on a new line.\n\nIf all numbers are the same, print `None`.",
+  "starter_code": "n = int(input())\nnumbers = [int(input()) for _ in range(n)]\n\n# Write your solution here\n# Find and print the second largest unique number\n# If not found, print None\n",
+  "visible_examples": [
+    {
+      "input": "5\n10\n3\n7\n10\n5",
+      "output": "7"
+    },
+    {
+      "input": "3\n4\n4\n4",
+      "output": "None"
+    },
+    {
+      "input": "4\n1\n5\n3\n9",
+      "output": "5"
+    }
+  ],
+  "test_cases": [
+    { "input": "5\n10\n3\n7\n10\n5",   "expected_output": "7",    "marks": 2 },
+    { "input": "3\n4\n4\n4",            "expected_output": "None", "marks": 2 },
+    { "input": "4\n1\n5\n3\n9",        "expected_output": "5",    "marks": 2 },
+    { "input": "2\n100\n200",           "expected_output": "100",  "marks": 2 },
+    { "input": "6\n3\n1\n4\n1\n5\n9", "expected_output": "5",    "marks": 2 }
+  ],
+  "constraints": [
+    "1 <= n <= 100",
+    "Numbers can be negative or positive integers",
+    "Find the second largest among UNIQUE values",
+    "Print None (not 'None') if there is no second largest"
+  ],
+  "metadata": {
+    "difficulty": "medium",
+    "marks": 10,
+    "topic": "lists"
+  }
+}

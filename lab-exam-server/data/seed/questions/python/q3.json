@@ -1,0 +1,38 @@
+{
+  "id": "py_q3",
+  "language": "python",
+  "title": "Factorial Using Recursion",
+  "statement": "Write a Python function called `factorial(n)` that returns the factorial of a non-negative integer `n` using recursion.\n\nRead the integer `n` from input and print the result.\n\nExample: factorial(5) = 5 × 4 × 3 × 2 × 1 = 120",
+  "starter_code": "def factorial(n):\n    # Write your recursive solution here\n    pass\n\nn = int(input())\nprint(factorial(n))\n",
+  "visible_examples": [
+    {
+      "input": "5",
+      "output": "120"
+    },
+    {
+      "input": "0",
+      "output": "1"
+    },
+    {
+      "input": "6",
+      "output": "720"
+    }
+  ],
+  "test_cases": [
+    { "input": "5",  "expected_output": "120",    "marks": 2 },
+    { "input": "0",  "expected_output": "1",      "marks": 2 },
+    { "input": "1",  "expected_output": "1",      "marks": 2 },
+    { "input": "10", "expected_output": "3628800","marks": 2 },
+    { "input": "7",  "expected_output": "5040",   "marks": 2 }
+  ],
+  "constraints": [
+    "Use recursion (not a loop)",
+    "0 <= n <= 12",
+    "Do not import any external libraries"
+  ],
+  "metadata": {
+    "difficulty": "easy",
+    "marks": 10,
+    "topic": "recursion"
+  }
+}
