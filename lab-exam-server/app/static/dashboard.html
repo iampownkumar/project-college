@@ -1,292 +1,234 @@
 <!DOCTYPE html>
+<!-- ============================================================
+     File: app/static/dashboard.html
+     Project: Local Lab Exam System - Coordinator Server
+     Author: Pownkumar A (Founder of Korelium)
+     Created: 2026-05-26
+     Last Updated: 2026-05-26
+     Location: Tamil Nadu, India
+     Description: Admin dashboard SPA shell.
+                  Served at GET /dashboard by the FastAPI server.
+                  Loads common.js, sessions.js, students.js.
+     ============================================================ -->
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Korelium Lab — Admin Dashboard</title>
+  <title>Korelium Lab — Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
-    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/static/dashboard.css" />
 </head>
-
 <body>
+<div class="app">
 
-  <div id="app" class="app">
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <div class="topbar-brand">
+      <span class="brand-hex">⬡</span>
+      <span class="brand-name">Korelium Lab</span>
+      <span class="brand-sep">/</span>
+      <span class="brand-sub">Admin</span>
+    </div>
+    <div class="topbar-right">
+      <span class="status-pill" id="serverStatus">
+        <span class="sdot" id="sdot"></span>
+        <span id="slabel">Connecting…</span>
+      </span>
+    </div>
+  </header>
 
-    <!-- TOP BAR -->
-    <header class="topbar">
-      <div class="topbar-left">
-        <span class="logo-icon small">⬡</span>
-        <span class="topbar-title">Korelium Lab</span>
-        <span class="topbar-sep">/</span>
-        <span class="topbar-page">Admin Dashboard</span>
-      </div>
-      <div class="topbar-right">
-        <div class="server-status" id="serverStatus">
-          <span class="status-dot" id="statusDot"></span>
-          <span id="statusLabel">Connecting…</span>
-        </div>
+  <div class="workspace">
 
-      </div>
-    </header>
+    <!-- ── LEFT NAV ─────────────────────────────── -->
+    <nav class="nav">
+      <button class="nav-item active" id="navSessions" onclick="showView('sessions')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Exam Sessions
+      </button>
+      <button class="nav-item" id="navStudents" onclick="showView('students')">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Students
+      </button>
+    </nav>
 
-    <!-- BODY: LEFT SIDEBAR + RIGHT CONTENT -->
-    <div class="layout">
+    <!-- ── MAIN CONTENT ───────────────────────────── -->
+    <main class="main">
 
-      <!-- ── LEFT: SESSIONS SIDEBAR ───────────────── -->
-      <aside class="sidebar">
-        <div class="sidebar-header">
-          <span class="sidebar-title">Exam Sessions</span>
-          <button class="icon-btn" id="newSessionBtn" title="New session">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-              stroke-linecap="round" stroke-linejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-          </button>
-        </div>
-
-        <div class="session-list" id="sessionList">
-          <div class="sidebar-loading">
-            <div class="spinner"></div>
-            <span>Loading sessions…</span>
+      <!-- ════ SESSIONS VIEW ════ -->
+      <div id="view-sessions" class="view">
+        <div class="view-header">
+          <div>
+            <h1 class="view-title">Exam Sessions</h1>
+            <p class="view-sub">Manage and monitor your lab exam sessions</p>
           </div>
+          <button class="btn btn-primary" onclick="openNewSessionModal()">+ New Session</button>
         </div>
 
-        <div class="sidebar-footer">
-          <button class="btn btn-outline btn-sm full-width" id="refreshSessionsBtn">↻ Refresh</button>
-        </div>
-      </aside>
-
-      <!-- ── RIGHT: MAIN CONTENT ───────────────────── -->
-      <main class="content">
-
-        <!-- State: no session selected -->
-        <div id="emptyState" class="empty-state">
-          <div class="empty-icon">📋</div>
-          <h2>Select a session</h2>
-          <p>Choose a session from the left to manage its students, or create a new one.</p>
-          <button class="btn btn-primary" id="emptyNewBtn">+ New Session</button>
-        </div>
-
-        <!-- State: session selected -->
-        <div id="sessionView" class="session-view hidden">
-
-          <!-- Session header -->
-          <div class="session-header">
-            <div class="session-header-info">
-              <div class="session-header-top">
-                <h2 id="viewTitle" class="session-title-text">Session Name</h2>
-                <span id="viewStatus" class="badge badge-draft">draft</span>
-              </div>
-              <div class="session-meta" id="viewMeta"></div>
-            </div>
-            <div class="session-header-actions">
-              <button class="btn btn-success btn-sm" id="activateBtn">▶ Activate</button>
-              <button class="btn btn-warning btn-sm" id="closeBtn">■ Close</button>
-              <button class="btn btn-danger btn-sm" id="deleteSessionBtn">Delete</button>
-            </div>
-          </div>
-
-          <!-- Tabs -->
-          <div class="tab-bar">
-            <button class="tab active" data-tab="students">Students</button>
-            <button class="tab" data-tab="monitor">Live Monitor</button>
-            <button class="tab" data-tab="submissions">Submissions</button>
-          </div>
-
-          <!-- TAB: STUDENTS -->
-          <div id="tab-students" class="tab-content">
-            <div class="students-toolbar">
-              <div class="toolbar-left">
-                <span id="studentCount" class="count-badge">0 students</span>
-              </div>
-              <div class="toolbar-right">
-                <button class="btn btn-outline btn-sm" id="addOneBtn">+ Add One</button>
-                <button class="btn btn-primary btn-sm" id="uploadCsvBtn">⬆ Upload CSV</button>
-                <button class="btn btn-danger btn-sm" id="deleteAllStudentsBtn">🗑 Delete All</button>
-              </div>
-            </div>
-
-            <!-- CSV upload panel (toggle) -->
-            <div id="csvPanel" class="csv-panel hidden">
-              <div class="csv-panel-header">
-                <span>Upload Students via CSV</span>
-                <button class="icon-btn" id="closeCsvPanel">✕</button>
-              </div>
-              <div class="csv-format-hint">
-                <strong>Expected CSV columns:</strong>
-                <code>registration_number, name, department, batch, year, section</code>
-                <div class="csv-example">Example:<br><span>24CS001,Arun Kumar,CSE,2024-28,1st,A</span></div>
-              </div>
-              <div class="csv-drop-zone" id="csvDropZone">
-                <div class="drop-icon">📂</div>
-                <div class="drop-label">Drop your CSV file here</div>
-                <div class="drop-sub">or</div>
-                <label class="btn btn-outline btn-sm" for="csvFileInput">Browse file</label>
-                <input type="file" id="csvFileInput" accept=".csv" class="hidden" />
-              </div>
-              <div id="csvPreview" class="csv-preview hidden"></div>
-              <div class="csv-actions hidden" id="csvActions">
-                <button class="btn btn-primary" id="confirmUploadBtn">Upload Students</button>
-                <button class="btn btn-ghost" id="cancelUploadBtn">Cancel</button>
-              </div>
-            </div>
-
-            <!-- Add single student form (toggle) -->
-            <div id="addOnePanel" class="add-one-panel hidden">
-              <div class="form-grid">
-                <div class="field">
-                  <label>Registration Number</label>
-                  <input type="text" id="f_reg" placeholder="24CS001" />
-                </div>
-                <div class="field">
-                  <label>Name</label>
-                  <input type="text" id="f_name" placeholder="Arun Kumar" />
-                </div>
-                <div class="field">
-                  <label>Department</label>
-                  <input type="text" id="f_dept" placeholder="CSE" />
-                </div>
-                <div class="field">
-                  <label>Batch</label>
-                  <input type="text" id="f_batch" placeholder="2024-28" />
-                </div>
-                <div class="field">
-                  <label>Year</label>
-                  <input type="text" id="f_year" placeholder="1st" />
-                </div>
-                <div class="field">
-                  <label>Section</label>
-                  <input type="text" id="f_section" placeholder="A" />
-                </div>
-              </div>
-              <div class="form-actions">
-                <button class="btn btn-primary btn-sm" id="saveOneBtn">Add Student</button>
-                <button class="btn btn-ghost btn-sm" id="cancelOneBtn">Cancel</button>
-              </div>
-            </div>
-
-            <!-- Students table -->
-            <div class="table-wrap" id="studentsTableWrap">
-              <table class="data-table" id="studentsTable">
-                <thead>
-                  <tr>
-                    <th>Reg. No.</th>
-                    <th>Name</th>
-                    <th>Dept</th>
-                    <th>Batch</th>
-                    <th>Year</th>
-                    <th>Section</th>
-                    <th>Status</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody id="studentsBody">
-                  <tr>
-                    <td colspan="8" class="empty-row">No students yet</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- TAB: LIVE MONITOR -->
-          <div id="tab-monitor" class="tab-content hidden">
-            <div class="monitor-bar">
-              <div class="monitor-stats" id="monitorStats"></div>
-              <div class="auto-refresh-indicator">
-                <span class="pulse-dot"></span>
-                Auto-refreshing every 5s
-              </div>
-            </div>
-            <div class="table-wrap">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Student</th>
-                    <th>Reg. No.</th>
-                    <th>Machine</th>
-                    <th>State</th>
-                    <th>Runs</th>
-                    <th>Submitted</th>
-                    <th>Last Seen</th>
-                  </tr>
-                </thead>
-                <tbody id="monitorBody">
-                  <tr>
-                    <td colspan="7" class="empty-row">Select an active session to monitor</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <!-- TAB: SUBMISSIONS -->
-          <div id="tab-submissions" class="tab-content hidden">
-            <div class="table-wrap">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Student</th>
-                    <th>Reg. No.</th>
-                    <th>Question</th>
-                    <th>Exit Code</th>
-                    <th>Type</th>
-                    <th>Submitted At</th>
-                  </tr>
-                </thead>
-                <tbody id="submissionsBody">
-                  <tr>
-                    <td colspan="6" class="empty-row">No submissions yet</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-        </div><!-- /session-view -->
-
-      </main>
-    </div><!-- /layout -->
-  </div><!-- /app -->
-
-  <!-- NEW SESSION MODAL -->
-  <div id="newSessionModal" class="modal-backdrop hidden">
-    <div class="modal">
-      <div class="modal-header">
-        <h3>New Exam Session</h3>
-        <button class="icon-btn" id="closeModalBtn">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="field">
-          <label>Session Title</label>
-          <input type="text" id="m_title" placeholder="Lab Exam — Unit 2" />
-        </div>
-        <div class="field">
-          <label>Department</label>
-          <input type="text" id="m_dept" placeholder="CSE" />
-        </div>
-        <div class="field">
-          <label>Duration (minutes)</label>
-          <input type="number" id="m_duration" value="60" min="10" max="480" />
+        <div id="sessionsGrid" class="sessions-grid">
+          <div class="loading-state"><div class="spinner"></div> Loading sessions…</div>
         </div>
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-ghost" id="cancelModalBtn">Cancel</button>
-        <button class="btn btn-primary" id="createSessionBtn">Create Session</button>
+
+      <!-- ════ SESSION DETAIL VIEW ════ -->
+      <div id="view-session-detail" class="view hidden">
+        <div class="breadcrumb">
+          <button class="bc-back" onclick="showView('sessions')">← Sessions</button>
+          <span class="bc-sep">/</span>
+          <span id="bcTitle">Session</span>
+        </div>
+
+        <div class="detail-card">
+          <div class="detail-top">
+            <div class="detail-info">
+              <div class="detail-title-row">
+                <h2 id="dTitle"></h2>
+                <span id="dStatus" class="badge"></span>
+              </div>
+              <div class="detail-meta" id="dMeta"></div>
+            </div>
+            <div class="detail-actions">
+              <button class="btn btn-success btn-sm" id="dActivate">▶ Activate</button>
+              <button class="btn btn-warning btn-sm" id="dClose">■ Close</button>
+              <button class="btn btn-danger btn-sm" id="dDelete">Delete</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detail Tabs -->
+        <div class="tab-bar">
+          <button class="tab active" data-tab="monitor">Live Monitor</button>
+          <button class="tab" data-tab="submissions">Submissions</button>
+        </div>
+
+        <div id="dtab-monitor" class="tab-content">
+          <div class="monitor-top">
+            <div class="monitor-stats" id="monStats"></div>
+            <span class="refresh-pill"><span class="pdot"></span> Auto-refresh 5s</span>
+          </div>
+          <div class="table-box">
+            <table class="tbl">
+              <thead><tr>
+                <th>Name</th><th>Reg. No.</th><th>Machine</th>
+                <th>State</th><th>Runs</th><th>Submitted</th><th>Last Seen</th>
+              </tr></thead>
+              <tbody id="monitorBody"><tr><td colspan="7" class="empty-cell">Select a session to monitor</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="dtab-submissions" class="tab-content hidden">
+          <div class="table-box">
+            <table class="tbl">
+              <thead><tr>
+                <th>Name</th><th>Reg. No.</th><th>Question</th>
+                <th>Exit</th><th>Type</th><th>Submitted At</th>
+              </tr></thead>
+              <tbody id="submissionsBody"><tr><td colspan="6" class="empty-cell">No submissions yet</td></tr></tbody>
+            </table>
+          </div>
+        </div>
       </div>
+
+      <!-- ════ STUDENTS VIEW ════ -->
+      <div id="view-students" class="view hidden">
+        <div class="view-header">
+          <div>
+            <h1 class="view-title">Students</h1>
+            <p class="view-sub">Browse by year, upload CSV to import students</p>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-outline" onclick="toggleCsvUpload()">⬆ Upload CSV</button>
+          </div>
+        </div>
+
+        <!-- CSV Upload Panel -->
+        <div id="csvPanel" class="csv-panel hidden">
+          <div class="csv-header">
+            <div>
+              <div class="csv-title">Upload Students via CSV</div>
+              <div class="csv-hint">Columns: <code>department, section, register number, name, year</code></div>
+            </div>
+            <button class="icon-btn" onclick="toggleCsvUpload()">✕</button>
+          </div>
+          <div class="drop-zone" id="dropZone">
+            <div class="drop-ico">📂</div>
+            <div class="drop-main">Drop CSV file here</div>
+            <div class="drop-or">or</div>
+            <label class="btn btn-outline btn-sm" for="csvInput">Browse</label>
+            <input type="file" id="csvInput" accept=".csv" class="hidden" />
+          </div>
+          <div id="csvPreview" class="csv-preview hidden"></div>
+          <div id="csvConfirm" class="csv-confirm hidden">
+            <button class="btn btn-primary" id="uploadBtn" onclick="doUpload()">Upload Students</button>
+            <button class="btn btn-ghost" onclick="resetCsv()">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Year cards -->
+        <div id="yearCards" class="year-grid">
+          <div class="loading-state"><div class="spinner"></div> Loading students…</div>
+        </div>
+
+        <!-- Section drill-down (appears below year cards) -->
+        <div id="sectionView" class="section-view hidden">
+          <div class="section-header">
+            <button class="bc-back" onclick="closeSectionView()">← Back to years</button>
+            <h2 id="sectionTitle"></h2>
+          </div>
+          <div id="sectionCards" class="section-grid"></div>
+        </div>
+
+        <!-- Full student register (appears after clicking a section) -->
+        <div id="registerView" class="register-view hidden">
+          <div class="section-header">
+            <button class="bc-back" onclick="closeRegisterView()">← Back</button>
+            <h2 id="registerTitle"></h2>
+          </div>
+          <div class="table-box">
+            <table class="tbl">
+              <thead><tr>
+                <th>#</th><th>Reg. No.</th><th>Name</th>
+                <th>Dept</th><th>Section</th><th>Status</th><th></th>
+              </tr></thead>
+              <tbody id="registerBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- NEW SESSION MODAL -->
+<div id="modalBackdrop" class="modal-bg hidden">
+  <div class="modal">
+    <div class="modal-hdr">
+      <h3>New Exam Session</h3>
+      <button class="icon-btn" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="field"><label>Title</label><input id="m_title" placeholder="Lab Exam — Unit 2" /></div>
+      <div class="field"><label>Department</label><input id="m_dept" placeholder="CSE" /></div>
+      <div class="field"><label>Duration (minutes)</label><input id="m_dur" type="number" value="60" min="10" /></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="cancelModalBtn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="createSessionBtn" onclick="createSession()">Create</button>
     </div>
   </div>
+</div>
 
-  <!-- TOAST -->
-  <div id="toastContainer" class="toast-container"></div>
+<!-- TOAST -->
+<div id="toasts" class="toasts"></div>
 
-  <script src="/static/js/dashboard.js"></script>
+  <!-- ① Shared utilities — must load first -->
+  <script src="/static/js/common.js"></script>
+  <!-- ② Sessions module -->
+  <script src="/static/js/sessions.js"></script>
+  <!-- ③ Students module -->
+  <script src="/static/js/students.js"></script>
 </body>
-
 </html>

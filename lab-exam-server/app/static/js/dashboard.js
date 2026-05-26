@@ -1,565 +1,535 @@
 // ============================================================
-// File: app/static/js/dashboard.js
-// Project: Korelium Lab Exam System — Admin Dashboard
-// Author: Pownkumar A
+// Korelium Lab — Admin Dashboard JS
 // ============================================================
 
-// ── Config ──────────────────────────────────────────────────
 const BASE = '';
-
-let selectedSessionId = null;
+let currentSessionId = null;
 let monitorTimer = null;
-let parsedCsvStudents = [];
+let allStudents = [];   // cached from API
+let parsedRows = [];    // CSV parse result
+let currentYear = null;
+let currentSection = null;
 
-// ── API Helper ───────────────────────────────────────────────
+// ── API ───────────────────────────────────────────────────
 async function api(method, path, body = null) {
-  const opts = {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-  };
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
   if (body !== null) opts.body = JSON.stringify(body);
   const res = await fetch(BASE + path, opts);
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(err.detail || res.statusText);
+    const e = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(e.detail || res.statusText);
   }
-  if (res.status === 204) return null;
-  return res.json();
+  return res.status === 204 ? null : res.json();
 }
 
-// ── Toast ────────────────────────────────────────────────────
-function toast(msg, type = 'info', duration = 3500) {
+// ── Toast ─────────────────────────────────────────────────
+function toast(msg, type = 'inf', ms = 3500) {
   const el = document.createElement('div');
   el.className = `toast ${type}`;
   el.innerHTML = `<span>${msg}</span>`;
-  document.getElementById('toastContainer').appendChild(el);
-  setTimeout(() => el.remove(), duration);
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(() => el.remove(), ms);
 }
 
-// ── Format helpers ───────────────────────────────────────────
-function fmtTime(iso) {
+// ── Time ──────────────────────────────────────────────────
+function fmt(iso) {
   if (!iso) return '—';
   return new Date(iso).toLocaleString('en-IN', {
-    timeZone: 'Asia/Kolkata',
-    day: '2-digit', month: 'short',
-    hour: '2-digit', minute: '2-digit',
+    timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short',
+    hour: '2-digit', minute: '2-digit'
   });
 }
-function timeSince(iso) {
-  if (!iso) return 'never';
-  const d = Math.floor((Date.now() - new Date(iso)) / 1000);
-  if (d < 60)  return `${d}s ago`;
-  if (d < 3600) return `${Math.floor(d/60)}m ago`;
-  return `${Math.floor(d/3600)}h ago`;
+function since(iso) {
+  if (!iso) return '—';
+  const s = Math.floor((Date.now() - new Date(iso)) / 1000);
+  if (s < 60) return `${s}s ago`;
+  if (s < 3600) return `${Math.floor(s/60)}m ago`;
+  return `${Math.floor(s/3600)}h ago`;
 }
 
-// ════════════════════════════════════════════════════════════
-//  INIT
-// ════════════════════════════════════════════════════════════
-function init() {
-  loadSessions();
-  checkServer();
-  setInterval(checkServer, 10000);
+function esc(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-async function checkServer() {
-  try {
-    await fetch(BASE + '/api/v1/health');
-    document.getElementById('statusDot').className = 'status-dot online';
-    document.getElementById('statusLabel').textContent = 'Server online';
-  } catch {
-    document.getElementById('statusDot').className = 'status-dot offline';
-    document.getElementById('statusLabel').textContent = 'Server offline';
+// ── Nav ───────────────────────────────────────────────────
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  const views = { sessions: 'view-sessions', students: 'view-students' };
+  const navs  = { sessions: 'navSessions',   students: 'navStudents' };
+  if (views[name]) {
+    document.getElementById(views[name]).classList.remove('hidden');
+    document.getElementById(navs[name]).classList.add('active');
   }
+  stopMonitor();
+  if (name === 'sessions') loadSessions();
+  if (name === 'students') loadStudentView();
 }
 
-// ════════════════════════════════════════════════════════════
-//  SESSIONS SIDEBAR
-// ════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════
+//  SESSIONS
+// ════════════════════════════════════════════════════════
 async function loadSessions() {
-  const list = document.getElementById('sessionList');
-  list.innerHTML = `<div class="sidebar-loading"><div class="spinner"></div><span>Loading…</span></div>`;
+  const grid = document.getElementById('sessionsGrid');
+  grid.innerHTML = `<div class="loading-state"><div class="spinner"></div> Loading…</div>`;
   try {
     const sessions = await api('GET', '/api/v1/admin/sessions');
-    renderSessionList(sessions);
+    renderSessionsGrid(sessions);
   } catch (e) {
-    list.innerHTML = `<div class="sidebar-loading" style="color:#f87171">Failed to load</div>`;
+    grid.innerHTML = `<div class="loading-state" style="color:var(--red)">Failed: ${esc(e.message)}</div>`;
   }
 }
 
-function renderSessionList(sessions) {
-  const list = document.getElementById('sessionList');
+const STATUS_ORDER = { active: 0, draft: 1, closed: 2 };
+function renderSessionsGrid(sessions) {
+  const grid = document.getElementById('sessionsGrid');
   if (!sessions.length) {
-    list.innerHTML = `<div class="sidebar-loading" style="color:var(--text-dim)">No sessions yet</div>`;
+    grid.innerHTML = `<div class="loading-state" style="color:var(--dim)">No sessions yet — create one!</div>`;
     return;
   }
-  // Sort: active first, then draft, then closed
-  const order = { active: 0, draft: 1, closed: 2 };
-  sessions.sort((a, b) => order[a.status] - order[b.status]);
-
-  list.innerHTML = sessions.map(s => `
-    <div class="session-card ${s.id === selectedSessionId ? 'active' : ''}"
-         id="sc-${s.id}" onclick="selectSession(${s.id})">
-      <div class="session-card-title">${esc(s.title)}</div>
-      <div class="session-card-meta">
+  sessions.sort((a, b) => (STATUS_ORDER[a.status] ?? 3) - (STATUS_ORDER[b.status] ?? 3));
+  grid.innerHTML = sessions.map(s => `
+    <div class="session-card" onclick="openSession(${s.id})">
+      <div class="sc-title">${esc(s.title)}</div>
+      <div class="sc-meta">
         <span class="badge badge-${s.status}">${s.status}</span>
-        <span class="session-card-dept">${esc(s.department)}</span>
+        <span class="sc-dept">${esc(s.department)}</span>
+        <span class="sc-dept">${s.language.toUpperCase()}</span>
+      </div>
+      <div class="sc-footer">
+        <span class="sc-counts">${s.question_count} questions · ${s.student_count} students</span>
+        <span class="sc-counts">${s.duration_minutes} min</span>
       </div>
     </div>
   `).join('');
 }
 
-async function selectSession(id) {
-  selectedSessionId = id;
-  stopMonitor();
-
-  // Update sidebar highlight
-  document.querySelectorAll('.session-card').forEach(c => c.classList.remove('active'));
-  const card = document.getElementById(`sc-${id}`);
-  if (card) card.classList.add('active');
-
-  // Show view
-  document.getElementById('emptyState').classList.add('hidden');
-  document.getElementById('sessionView').classList.remove('hidden');
-
+async function openSession(id) {
+  currentSessionId = id;
+  document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+  document.getElementById('view-session-detail').classList.remove('hidden');
   try {
     const s = await api('GET', `/api/v1/admin/session/${id}`);
-    renderSessionHeader(s);
-  } catch (e) {
-    toast('Failed to load session: ' + e.message, 'error');
-  }
-
-  // Default to students tab
-  switchTab('students');
+    renderSessionDetail(s);
+    switchDetailTab('monitor');
+    startMonitor();
+  } catch (e) { toast(e.message, 'err'); }
 }
 
-function renderSessionHeader(s) {
-  document.getElementById('viewTitle').textContent = s.title;
-  const statusEl = document.getElementById('viewStatus');
-  statusEl.className = `badge badge-${s.status}`;
-  statusEl.textContent = s.status;
-
-  document.getElementById('viewMeta').innerHTML = [
+function renderSessionDetail(s) {
+  document.getElementById('bcTitle').textContent = s.title;
+  document.getElementById('dTitle').textContent = s.title;
+  const sb = document.getElementById('dStatus');
+  sb.className = `badge badge-${s.status}`; sb.textContent = s.status;
+  document.getElementById('dMeta').innerHTML = [
     `<span>${esc(s.department)}</span>`,
     `<span>${s.language.toUpperCase()}</span>`,
     `<span>${s.duration_minutes} min</span>`,
-    s.start_time ? `<span>Start: ${fmtTime(s.start_time)}</span>` : '',
-    s.end_time   ? `<span>End: ${fmtTime(s.end_time)}</span>`   : '',
-    `<span>${s.question_count} Q · ${s.student_count} students</span>`,
+    s.start_time ? `<span>Start: ${fmt(s.start_time)}</span>` : '',
+    s.end_time   ? `<span>End: ${fmt(s.end_time)}</span>` : '',
   ].filter(Boolean).join('');
-
-  // Button visibility based on status
-  document.getElementById('activateBtn').style.display = s.status === 'draft'   ? '' : 'none';
-  document.getElementById('closeBtn').style.display    = s.status === 'active'  ? '' : 'none';
+  document.getElementById('dActivate').style.display = s.status === 'draft'  ? '' : 'none';
+  document.getElementById('dClose').style.display    = s.status === 'active' ? '' : 'none';
 }
 
-// ── Session Actions ──────────────────────────────────────────
-async function setSessionStatus(status) {
-  try {
-    await api('PUT', `/api/v1/admin/session/${selectedSessionId}/status`, { status });
-    toast(`Session ${status}`, 'success');
-    loadSessions();
-    selectSession(selectedSessionId);
-  } catch (e) {
-    toast(e.message, 'error');
-  }
-}
-
-async function deleteCurrentSession() {
-  if (!confirm('Delete this session and all its data?')) return;
-  try {
-    await api('DELETE', `/api/v1/admin/session/${selectedSessionId}`);
-    toast('Session deleted', 'success');
-    selectedSessionId = null;
-    document.getElementById('sessionView').classList.add('hidden');
-    document.getElementById('emptyState').classList.remove('hidden');
-    loadSessions();
-  } catch (e) {
-    toast(e.message, 'error');
-  }
-}
-
-// ── New Session Modal ────────────────────────────────────────
-function openNewSessionModal() {
-  document.getElementById('newSessionModal').classList.remove('hidden');
-  document.getElementById('m_title').focus();
-}
-function closeNewSessionModal() {
-  document.getElementById('newSessionModal').classList.add('hidden');
-}
-async function createSession() {
-  const title    = document.getElementById('m_title').value.trim();
-  const dept     = document.getElementById('m_dept').value.trim();
-  const duration = parseInt(document.getElementById('m_duration').value) || 60;
-  if (!title || !dept) { toast('Title and department are required', 'error'); return; }
-  try {
-    const s = await api('POST', '/api/v1/admin/session', { title, department: dept, duration_minutes: duration });
-    toast('Session created', 'success');
-    closeNewSessionModal();
-    document.getElementById('m_title').value = '';
-    document.getElementById('m_dept').value = '';
-    document.getElementById('m_duration').value = '60';
-    await loadSessions();
-    selectSession(s.id);
-  } catch (e) {
-    toast(e.message, 'error');
-  }
-}
-
-// ════════════════════════════════════════════════════════════
-//  TABS
-// ════════════════════════════════════════════════════════════
-function switchTab(name) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
-  document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-  document.getElementById(`tab-${name}`).classList.remove('hidden');
+function switchDetailTab(name) {
+  document.querySelectorAll('#view-session-detail .tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('#view-session-detail .tab-content').forEach(c => c.classList.add('hidden'));
+  document.getElementById(`dtab-${name}`).classList.remove('hidden');
   stopMonitor();
-  if (name === 'students')    loadStudents();
   if (name === 'monitor')     startMonitor();
   if (name === 'submissions') loadSubmissions();
 }
 
-// ════════════════════════════════════════════════════════════
-//  STUDENTS
-// ════════════════════════════════════════════════════════════
-async function loadStudents() {
-  const tbody = document.getElementById('studentsBody');
-  tbody.innerHTML = `<tr><td colspan="8" class="empty-row"><div class="spinner" style="margin:auto"></div></td></tr>`;
+// Session actions
+async function setStatus(status) {
   try {
-    const students = await api('GET', '/api/v1/admin/students');
-    renderStudents(students);
-  } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="8" class="empty-row" style="color:#f87171">Failed to load</td></tr>`;
-  }
+    await api('PUT', `/api/v1/admin/session/${currentSessionId}/status`, { status });
+    toast(`Session ${status}`, 'ok');
+    const s = await api('GET', `/api/v1/admin/session/${currentSessionId}`);
+    renderSessionDetail(s);
+    loadSessions();
+  } catch (e) { toast(e.message, 'err'); }
 }
 
-function renderStudents(students) {
-  const tbody = document.getElementById('studentsBody');
-  document.getElementById('studentCount').textContent = `${students.length} student${students.length !== 1 ? 's' : ''}`;
-  if (!students.length) {
-    tbody.innerHTML = `<tr><td colspan="8" class="empty-row">No students yet — upload a CSV or add one manually</td></tr>`;
-    return;
-  }
-  tbody.innerHTML = students.map(s => `
-    <tr>
-      <td><span style="font-family:'JetBrains Mono',monospace;font-size:12px">${esc(s.registration_number)}</span></td>
+async function deleteSession() {
+  if (!confirm('Delete this session and all its data?')) return;
+  try {
+    await api('DELETE', `/api/v1/admin/session/${currentSessionId}`);
+    toast('Session deleted', 'ok');
+    showView('sessions');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+// New session modal
+function openNewSessionModal() {
+  document.getElementById('modalBackdrop').classList.remove('hidden');
+  document.getElementById('m_title').focus();
+}
+function closeModal() { document.getElementById('modalBackdrop').classList.add('hidden'); }
+async function createSession() {
+  const title = document.getElementById('m_title').value.trim();
+  const dept  = document.getElementById('m_dept').value.trim();
+  const dur   = parseInt(document.getElementById('m_dur').value) || 60;
+  if (!title || !dept) { toast('Title and department required', 'err'); return; }
+  try {
+    const s = await api('POST', '/api/v1/admin/session', { title, department: dept, duration_minutes: dur, language: 'python' });
+    toast('Session created', 'ok'); closeModal();
+    document.getElementById('m_title').value = '';
+    document.getElementById('m_dept').value  = '';
+    document.getElementById('m_dur').value   = '60';
+    await loadSessions();
+    openSession(s.id);
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+// ── Live Monitor ──────────────────────────────────────────
+function startMonitor() { fetchMonitor(); monitorTimer = setInterval(fetchMonitor, 5000); }
+function stopMonitor()  { if (monitorTimer) { clearInterval(monitorTimer); monitorTimer = null; } }
+
+async function fetchMonitor() {
+  if (!currentSessionId) return;
+  try {
+    const d = await api('GET', `/api/v1/admin/session/${currentSessionId}/monitor`);
+    document.getElementById('monStats').innerHTML = `
+      <div class="stat-chip"><b>${d.total_students}</b> <span style="color:var(--muted)">total</span></div>
+      <div class="stat-chip"><b style="color:var(--green)">${d.online_count}</b> <span style="color:var(--muted)">online</span></div>
+      <div class="stat-chip"><b style="color:var(--accent)">${d.submitted_count}</b> <span style="color:var(--muted)">submitted</span></div>
+    `;
+    const tbody = document.getElementById('monitorBody');
+    if (!d.students.length) { tbody.innerHTML = `<tr><td colspan="7" class="empty-cell">No students assigned</td></tr>`; return; }
+    tbody.innerHTML = d.students.map(s => `<tr>
       <td>${esc(s.name)}</td>
-      <td>${esc(s.department)}</td>
-      <td>${esc(s.batch)}</td>
-      <td>${esc(s.year)}</td>
-      <td>${esc(s.section)}</td>
-      <td>
-        <span class="badge ${s.enabled ? 'badge-enabled' : 'badge-disabled'}">
-          ${s.enabled ? 'Active' : 'Disabled'}
-        </span>
-      </td>
-      <td>
-        <div class="row-actions">
-          <button class="action-link ${s.enabled ? 'warn' : 'muted'}"
-            onclick="${s.enabled ? 'disableStudent' : 'enableStudent'}('${esc(s.registration_number)}')">
-            ${s.enabled ? 'Disable' : 'Enable'}
-          </button>
-          <button class="action-link danger" onclick="deleteStudent('${esc(s.registration_number)}')">Delete</button>
-        </div>
-      </td>
-    </tr>
-  `).join('');
+      <td class="mono">${esc(s.registration_number)}</td>
+      <td>${s.machine_ip ? `${esc(s.machine_name||'')} <span style="color:var(--dim);font-size:11px">${esc(s.machine_ip)}</span>` : '<span style="color:var(--dim)">—</span>'}</td>
+      <td><span class="badge badge-${s.is_online ? 'online' : 'offline'}">${s.is_online ? 'Online' : 'Offline'}</span></td>
+      <td>${s.run_count}</td>
+      <td>${s.has_submitted ? `<span class="badge badge-sub">Submitted</span>` : '<span style="color:var(--dim)">—</span>'}</td>
+      <td style="color:var(--muted);font-size:12px">${since(s.last_seen_at)}</td>
+    </tr>`).join('');
+  } catch {/* silent */}
 }
 
-async function enableStudent(reg)  {
-  try { await api('PUT', `/api/v1/admin/student/${reg}/enable`);  loadStudents(); } catch(e) { toast(e.message,'error'); }
-}
-async function disableStudent(reg) {
-  try { await api('PUT', `/api/v1/admin/student/${reg}/disable`); loadStudents(); } catch(e) { toast(e.message,'error'); }
-}
-async function deleteStudent(reg) {
-  if (!confirm(`Delete student ${reg}?`)) return;
-  try { await api('DELETE', `/api/v1/admin/student/${reg}`); toast('Deleted','success'); loadStudents(); } catch(e) { toast(e.message,'error'); }
-}
-async function deleteAllStudents() {
-  if (!confirm('Delete ALL students? This cannot be undone.')) return;
-  try { await api('DELETE', '/api/v1/admin/students/all'); toast('All students deleted','success'); loadStudents(); } catch(e) { toast(e.message,'error'); }
-}
-
-// ── Add One ──────────────────────────────────────────────────
-function toggleAddOne() {
-  const p = document.getElementById('addOnePanel');
-  p.classList.toggle('hidden');
-  if (!p.classList.contains('hidden')) {
-    document.getElementById('csvPanel').classList.add('hidden');
-    document.getElementById('f_reg').focus();
-  }
-}
-async function saveOne() {
-  const payload = {
-    registration_number: document.getElementById('f_reg').value.trim(),
-    name:       document.getElementById('f_name').value.trim(),
-    department: document.getElementById('f_dept').value.trim(),
-    batch:      document.getElementById('f_batch').value.trim(),
-    year:       document.getElementById('f_year').value.trim(),
-    section:    document.getElementById('f_section').value.trim(),
-  };
-  if (!payload.registration_number || !payload.name || !payload.department || !payload.batch || !payload.year || !payload.section) {
-    toast('All fields are required', 'error'); return;
-  }
+// ── Submissions ───────────────────────────────────────────
+async function loadSubmissions() {
+  const tbody = document.getElementById('submissionsBody');
+  tbody.innerHTML = `<tr><td colspan="6" class="empty-cell"><div class="spinner" style="margin:auto"></div></td></tr>`;
   try {
-    await api('POST', '/api/v1/admin/student', payload);
-    toast('Student added', 'success');
-    document.getElementById('addOnePanel').classList.add('hidden');
-    ['f_reg','f_name','f_dept','f_batch','f_year','f_section'].forEach(id => document.getElementById(id).value = '');
-    loadStudents();
+    const subs = await api('GET', `/api/v1/admin/session/${currentSessionId}/submissions`);
+    if (!subs.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty-cell">No submissions yet</td></tr>`; return; }
+    const COLORS = { normal:'badge-sub', auto_tab_switch:'badge badge-draft', auto_timer:'badge-closed', resubmission:'badge-draft' };
+    tbody.innerHTML = subs.map(s => `<tr>
+      <td>${esc(s.student_name||'—')}</td>
+      <td class="mono">${esc(s.registration_number||'—')}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.question_title||'—')}</td>
+      <td class="mono" style="color:${s.exit_code===0?'var(--green)':'var(--red)'}">${s.exit_code??'—'}</td>
+      <td><span class="badge ${COLORS[s.submission_type]||'badge-draft'}">${esc(s.submission_type||'normal')}</span></td>
+      <td style="color:var(--muted);font-size:12px">${fmt(s.submitted_at)}</td>
+    </tr>`).join('');
   } catch (e) {
-    toast(e.message, 'error');
+    tbody.innerHTML = `<tr><td colspan="6" class="empty-cell" style="color:var(--red)">Failed to load</td></tr>`;
   }
 }
 
-// ── CSV Upload ───────────────────────────────────────────────
-function toggleCsvPanel() {
+// ════════════════════════════════════════════════════════
+//  STUDENTS — YEAR/SECTION DRILL-DOWN
+// ════════════════════════════════════════════════════════
+const YEAR_LABELS = { '1st': '1st Year', '2nd': '2nd Year', '3rd': '3rd Year', '4th': '4th Year' };
+const YEAR_ORDER  = ['1st', '2nd', '3rd', '4th'];
+
+async function loadStudentView() {
+  const grid = document.getElementById('yearCards');
+  grid.innerHTML = `<div class="loading-state"><div class="spinner"></div> Loading…</div>`;
+  document.getElementById('sectionView').classList.add('hidden');
+  document.getElementById('registerView').classList.add('hidden');
+  try {
+    allStudents = await api('GET', '/api/v1/admin/students');
+    renderYearCards(allStudents);
+  } catch (e) {
+    grid.innerHTML = `<div class="loading-state" style="color:var(--red)">Failed: ${esc(e.message)}</div>`;
+  }
+}
+
+function renderYearCards(students) {
+  const grid = document.getElementById('yearCards');
+  // Count by year
+  const byYear = {};
+  students.forEach(s => {
+    const y = s.year || 'Unknown';
+    byYear[y] = (byYear[y] || 0) + 1;
+  });
+
+  const ordinals = ['1st','2nd','3rd','4th'];
+  const cards = ordinals.map((y, i) => {
+    const count = byYear[y] || 0;
+    const num = ['1','2','3','4'][i];
+    const suffix = ['st','nd','rd','th'][i];
+    const empty = count === 0;
+    return `<div class="year-card ${empty ? 'year-card-empty' : ''}" ${empty ? '' : `onclick="openYear('${y}')"`}>
+      <span class="year-card-num">${num}<sup style="font-size:16px;font-weight:600;opacity:.7">${suffix}</sup></span>
+      <div class="year-card-label">Year</div>
+      <div class="year-card-count">${empty ? 'No students' : count + ' students'}</div>
+    </div>`;
+  }).join('');
+
+  // Any other years not in standard list
+  const extra = Object.keys(byYear).filter(y => !ordinals.includes(y));
+  const extraCards = extra.map(y => `
+    <div class="year-card" onclick="openYear('${esc(y)}')">
+      <span class="year-card-num" style="font-size:22px">${esc(y)}</span>
+      <div class="year-card-label">Year</div>
+      <div class="year-card-count">${byYear[y]} students</div>
+    </div>
+  `).join('');
+
+  grid.innerHTML = cards + extraCards;
+}
+
+function openYear(year) {
+  currentYear = year;
+  const students = allStudents.filter(s => s.year === year);
+
+  // Group by section
+  const bySection = {};
+  students.forEach(s => {
+    const sec = s.section || '?';
+    if (!bySection[sec]) bySection[sec] = [];
+    bySection[sec].push(s);
+  });
+
+  document.getElementById('sectionTitle').textContent = `${year} Year — Select a Section`;
+  const sectCards = Object.keys(bySection).sort().map(sec => `
+    <div class="section-card" onclick="openSection('${esc(sec)}')">
+      <div class="sec-letter">Section ${esc(sec)}</div>
+      <div class="sec-count">${bySection[sec].length} students</div>
+    </div>
+  `).join('');
+
+  document.getElementById('sectionCards').innerHTML = sectCards;
+  document.getElementById('sectionView').classList.remove('hidden');
+  document.getElementById('registerView').classList.add('hidden');
+  document.getElementById('sectionView').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function closeSectionView() {
+  document.getElementById('sectionView').classList.add('hidden');
+  document.getElementById('registerView').classList.add('hidden');
+  currentYear = null; currentSection = null;
+}
+
+function openSection(section) {
+  currentSection = section;
+  const students = allStudents.filter(s => s.year === currentYear && s.section === section);
+  document.getElementById('registerTitle').textContent = `${currentYear} Year · Section ${section} — ${students.length} students`;
+  renderRegister(students);
+  document.getElementById('registerView').classList.remove('hidden');
+  document.getElementById('registerView').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function closeRegisterView() {
+  document.getElementById('registerView').classList.add('hidden');
+  currentSection = null;
+}
+
+function renderRegister(students) {
+  const tbody = document.getElementById('registerBody');
+  if (!students.length) {
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-cell">No students</td></tr>`; return;
+  }
+  tbody.innerHTML = students.map((s, i) => `<tr>
+    <td style="color:var(--muted)">${i + 1}</td>
+    <td class="mono">${esc(s.registration_number)}</td>
+    <td>${esc(s.name)}</td>
+    <td>${esc(s.department)}</td>
+    <td>${esc(s.section)}</td>
+    <td><span class="badge badge-${s.enabled ? 'enabled' : 'disabled'}">${s.enabled ? 'Active' : 'Disabled'}</span></td>
+    <td>
+      <button class="row-act ${s.enabled ? 'warn' : ''}" onclick="${s.enabled ? 'disableS' : 'enableS'}('${esc(s.registration_number)}')">
+        ${s.enabled ? 'Disable' : 'Enable'}
+      </button>
+      <button class="row-act danger" onclick="deleteS('${esc(s.registration_number)}')">Delete</button>
+    </td>
+  </tr>`).join('');
+}
+
+async function enableS(reg)  { try { await api('PUT',`/api/v1/admin/student/${reg}/enable`);  await reloadSection(); } catch(e){toast(e.message,'err');} }
+async function disableS(reg) { try { await api('PUT',`/api/v1/admin/student/${reg}/disable`); await reloadSection(); } catch(e){toast(e.message,'err');} }
+async function deleteS(reg)  {
+  if (!confirm(`Delete ${reg}?`)) return;
+  try { await api('DELETE',`/api/v1/admin/student/${reg}`); toast('Deleted','ok'); await reloadSection(); } catch(e){toast(e.message,'err');}
+}
+async function reloadSection() {
+  allStudents = await api('GET', '/api/v1/admin/students');
+  renderYearCards(allStudents);
+  if (currentYear && currentSection) openSection(currentSection);
+}
+
+// ════════════════════════════════════════════════════════
+//  CSV UPLOAD
+// ════════════════════════════════════════════════════════
+function toggleCsvUpload() {
   const p = document.getElementById('csvPanel');
   p.classList.toggle('hidden');
-  if (!p.classList.contains('hidden')) {
-    document.getElementById('addOnePanel').classList.add('hidden');
-  }
 }
 
-function handleCsvFile(file) {
-  if (!file) return;
+function handleFile(file) {
+  if (!file || !file.name.endsWith('.csv')) { toast('Please select a CSV file', 'err'); return; }
   const reader = new FileReader();
   reader.onload = e => {
-    try {
-      parsedCsvStudents = parseCSV(e.target.result);
-      renderCsvPreview(parsedCsvStudents);
-    } catch (err) {
-      toast('CSV parse error: ' + err.message, 'error');
-    }
+    try { parsedRows = parseStudentCSV(e.target.result); renderCsvPreview(); }
+    catch (err) { toast(err.message, 'err'); }
   };
   reader.readAsText(file);
 }
 
-function parseCSV(text) {
+// Parse the college CSV format:
+// department, section, register number, name, year
+// → maps to API: registration_number, name, department, section, year, batch
+function parseStudentCSV(text) {
   const lines = text.trim().split('\n').map(l => l.trim()).filter(Boolean);
-  if (lines.length < 2) throw new Error('CSV must have a header and at least one data row');
+  if (lines.length < 2) throw new Error('CSV is empty');
 
-  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/\s+/g,'_'));
-  const REQUIRED = ['registration_number','name','department','batch','year','section'];
-  const missing = REQUIRED.filter(r => !headers.includes(r));
+  // Normalize headers
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/\s+/g,'_').replace(/[^a-z_]/g,''));
+  // Accept both "register_number" and "registration_number"
+  const regIdx  = headers.findIndex(h => h.includes('register'));
+  const nameIdx = headers.findIndex(h => h === 'name');
+  const deptIdx = headers.findIndex(h => h === 'department' || h === 'dept');
+  const secIdx  = headers.findIndex(h => h === 'section');
+  const yearIdx = headers.findIndex(h => h === 'year');
+
+  const missing = [['Register No.', regIdx], ['Name', nameIdx], ['Department', deptIdx], ['Section', secIdx], ['Year', yearIdx]]
+    .filter(([, i]) => i === -1).map(([n]) => n);
   if (missing.length) throw new Error(`Missing columns: ${missing.join(', ')}`);
 
-  return lines.slice(1).map((line, i) => {
-    // handle quoted fields
-    const vals = [];
-    let current = ''; let inQuote = false;
-    for (const ch of line) {
-      if (ch === '"') { inQuote = !inQuote; }
-      else if (ch === ',' && !inQuote) { vals.push(current.trim()); current = ''; }
-      else { current += ch; }
-    }
-    vals.push(current.trim());
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const vals = splitCsvLine(lines[i]);
+    const reg  = (vals[regIdx]  || '').trim();
+    const name = (vals[nameIdx] || '').trim();
+    const dept = (vals[deptIdx] || '').trim();
+    const sec  = (vals[secIdx]  || '').trim();
+    const year = (vals[yearIdx] || '').trim();
+    if (!reg || !name) continue; // skip empty rows
 
-    const row = {};
-    headers.forEach((h, idx) => { row[h] = vals[idx] || ''; });
+    // Derive batch from register number (e.g. 2117240020001 → "24" → "2024-28")
+    const batch = deriveBatch(reg, year);
 
-    for (const r of REQUIRED) {
-      if (!row[r]) throw new Error(`Row ${i+2}: missing "${r}"`);
-    }
-    return row;
-  });
+    rows.push({ registration_number: reg, name, department: dept, section: sec, year, batch, enabled: true });
+  }
+  if (!rows.length) throw new Error('No valid rows found in CSV');
+  return rows;
 }
 
-function renderCsvPreview(rows) {
+function deriveBatch(reg, year) {
+  // Register format: 2117240020001 — digits 5-6 are the year joined (24 = 2024)
+  const m = reg.match(/^\d{4}(\d{2})\d/);
+  if (!m) return 'Unknown';
+  const joinedYear = 2000 + parseInt(m[1]);
+  // If student is 2nd year, they joined 1 year ago, etc.
+  const yearOffset = { '1st': 0, '2nd': 1, '3rd': 2, '4th': 3 };
+  const offset = yearOffset[year] ?? 0;
+  const entryYear = joinedYear - offset;  // not always accurate but best guess
+  // Actually just use the join year from the register number directly
+  return `${joinedYear}-${joinedYear + 4}`;
+}
+
+function splitCsvLine(line) {
+  const vals = []; let cur = ''; let inQ = false;
+  for (const ch of line) {
+    if (ch === '"') { inQ = !inQ; }
+    else if (ch === ',' && !inQ) { vals.push(cur); cur = ''; }
+    else cur += ch;
+  }
+  vals.push(cur);
+  return vals;
+}
+
+function renderCsvPreview() {
+  const cols   = ['registration_number','name','department','section','year'];
+  const labels = ['Reg. No.','Name','Dept','Section','Year'];
   const preview = document.getElementById('csvPreview');
-  const cols = ['registration_number','name','department','batch','year','section'];
-  const colLabels = ['Reg. No.','Name','Dept','Batch','Year','Sec'];
-  preview.innerHTML = `
-    <table>
-      <thead><tr>${colLabels.map(l=>`<th>${l}</th>`).join('')}</tr></thead>
-      <tbody>
-        ${rows.slice(0, 10).map(r => `<tr>${cols.map(c=>`<td>${esc(r[c]||'')}</td>`).join('')}</tr>`).join('')}
-        ${rows.length > 10 ? `<tr><td colspan="${cols.length}" style="text-align:center;color:var(--text-muted);padding:8px">…and ${rows.length-10} more rows</td></tr>` : ''}
-      </tbody>
-    </table>
-  `;
+  preview.innerHTML = `<table>
+    <thead><tr>${labels.map(l=>`<th>${l}</th>`).join('')}</tr></thead>
+    <tbody>
+      ${parsedRows.slice(0,12).map(r=>`<tr>${cols.map(c=>`<td>${esc(r[c]||'')}</td>`).join('')}</tr>`).join('')}
+      ${parsedRows.length > 12 ? `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:8px">…and ${parsedRows.length-12} more</td></tr>` : ''}
+    </tbody>
+  </table>`;
   preview.classList.remove('hidden');
-  document.getElementById('csvActions').classList.remove('hidden');
+  document.getElementById('csvConfirm').classList.remove('hidden');
 }
 
-async function confirmUpload() {
-  if (!parsedCsvStudents.length) return;
-  const btn = document.getElementById('confirmUploadBtn');
+async function doUpload() {
+  if (!parsedRows.length) return;
+  const btn = document.getElementById('uploadBtn');
   btn.disabled = true; btn.textContent = 'Uploading…';
   try {
-    const result = await api('POST', '/api/v1/admin/students/bulk', { students: parsedCsvStudents });
-    toast(`✓ ${result.created} created, ${result.skipped} skipped${result.errors.length ? ` — ${result.errors.length} errors` : ''}`, result.errors.length ? 'info' : 'success', 5000);
-    closeCsvPanel();
-    loadStudents();
-  } catch (e) {
-    toast(e.message, 'error');
-  } finally {
-    btn.disabled = false; btn.textContent = 'Upload Students';
-  }
+    const r = await api('POST', '/api/v1/admin/students/bulk', { students: parsedRows });
+    toast(`✓ ${r.created} created, ${r.skipped} skipped${r.errors.length ? ` · ${r.errors.length} errors` : ''}`,
+          r.errors.length ? 'inf' : 'ok', 5000);
+    resetCsv();
+    loadStudentView();
+  } catch (e) { toast(e.message, 'err'); }
+  finally { btn.disabled = false; btn.textContent = 'Upload Students'; }
 }
 
-function closeCsvPanel() {
+function resetCsv() {
+  parsedRows = [];
   document.getElementById('csvPanel').classList.add('hidden');
   document.getElementById('csvPreview').classList.add('hidden');
-  document.getElementById('csvActions').classList.add('hidden');
-  document.getElementById('csvFileInput').value = '';
-  parsedCsvStudents = [];
+  document.getElementById('csvConfirm').classList.add('hidden');
+  document.getElementById('csvInput').value = '';
 }
 
-// ════════════════════════════════════════════════════════════
-//  LIVE MONITOR
-// ════════════════════════════════════════════════════════════
-function startMonitor() {
-  fetchMonitor();
-  monitorTimer = setInterval(fetchMonitor, 5000);
-}
-function stopMonitor() {
-  if (monitorTimer) { clearInterval(monitorTimer); monitorTimer = null; }
-}
-
-async function fetchMonitor() {
-  if (!selectedSessionId) return;
+// ════════════════════════════════════════════════════════
+//  SERVER STATUS
+// ════════════════════════════════════════════════════════
+async function checkServer() {
   try {
-    const data = await api('GET', `/api/v1/admin/session/${selectedSessionId}/monitor`);
-    renderMonitor(data);
-  } catch {/* silently fail on poll */}
-}
-
-function renderMonitor(data) {
-  document.getElementById('monitorStats').innerHTML = `
-    <div class="stat-pill"><span class="num">${data.total_students}</span><span class="lbl">total</span></div>
-    <div class="stat-pill"><span class="num" style="color:var(--green)">${data.online_count}</span><span class="lbl">online</span></div>
-    <div class="stat-pill"><span class="num" style="color:var(--accent)">${data.submitted_count}</span><span class="lbl">submitted</span></div>
-  `;
-  const tbody = document.getElementById('monitorBody');
-  if (!data.students.length) {
-    tbody.innerHTML = `<tr><td colspan="7" class="empty-row">No students in this session</td></tr>`;
-    return;
-  }
-  tbody.innerHTML = data.students.map(s => `
-    <tr>
-      <td>${esc(s.name)}</td>
-      <td><span style="font-family:'JetBrains Mono',monospace;font-size:12px">${esc(s.registration_number)}</span></td>
-      <td>${s.machine_ip ? `${esc(s.machine_name||'')} <span style="color:var(--text-dim);font-size:11px">${esc(s.machine_ip)}</span>` : '<span style="color:var(--text-dim)">—</span>'}</td>
-      <td>
-        <span class="badge ${s.is_online ? 'badge-online' : 'badge-offline'}">
-          ${s.is_online ? 'Online' : 'Offline'}
-        </span>
-        ${s.client_state && s.client_state !== 'idle' ? `<span class="badge badge-running" style="margin-left:4px">${esc(s.client_state)}</span>` : ''}
-      </td>
-      <td>${s.run_count}</td>
-      <td>
-        ${s.has_submitted
-          ? `<span class="badge badge-submitted">Submitted</span>`
-          : `<span style="color:var(--text-dim)">—</span>`}
-      </td>
-      <td style="color:var(--text-muted);font-size:12px">${timeSince(s.last_seen_at)}</td>
-    </tr>
-  `).join('');
-}
-
-// ════════════════════════════════════════════════════════════
-//  SUBMISSIONS
-// ════════════════════════════════════════════════════════════
-async function loadSubmissions() {
-  const tbody = document.getElementById('submissionsBody');
-  tbody.innerHTML = `<tr><td colspan="6" class="empty-row"><div class="spinner" style="margin:auto"></div></td></tr>`;
-  try {
-    const subs = await api('GET', `/api/v1/admin/session/${selectedSessionId}/submissions`);
-    renderSubmissions(subs);
-  } catch (e) {
-    tbody.innerHTML = `<tr><td colspan="6" class="empty-row" style="color:#f87171">Failed to load</td></tr>`;
+    await fetch('/api/v1/health');
+    document.getElementById('sdot').className = 'sdot on';
+    document.getElementById('slabel').textContent = 'Server online';
+  } catch {
+    document.getElementById('sdot').className = 'sdot off';
+    document.getElementById('slabel').textContent = 'Server offline';
   }
 }
 
-function renderSubmissions(subs) {
-  const tbody = document.getElementById('submissionsBody');
-  if (!subs.length) {
-    tbody.innerHTML = `<tr><td colspan="6" class="empty-row">No submissions yet</td></tr>`;
-    return;
-  }
-  const typeColors = { normal: 'badge-submitted', auto_tab_switch: 'badge-running', auto_timer: 'badge-closed', resubmission: 'badge-draft' };
-  tbody.innerHTML = subs.map(s => `
-    <tr>
-      <td>${esc(s.student_name || '—')}</td>
-      <td><span style="font-family:'JetBrains Mono',monospace;font-size:12px">${esc(s.registration_number || '—')}</span></td>
-      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(s.question_title||'')}">
-        ${esc(s.question_title || '—')}
-      </td>
-      <td>
-        <span style="font-family:'JetBrains Mono',monospace;color:${s.exit_code === 0 ? 'var(--green)' : 'var(--red)'}">
-          ${s.exit_code !== null && s.exit_code !== undefined ? s.exit_code : '—'}
-        </span>
-      </td>
-      <td><span class="badge ${typeColors[s.submission_type] || 'badge-draft'}">${esc(s.submission_type || 'normal')}</span></td>
-      <td style="color:var(--text-muted);font-size:12px">${fmtTime(s.submitted_at)}</td>
-    </tr>
-  `).join('');
-}
-
-// ── Escape HTML ──────────────────────────────────────────────
-function esc(str) {
-  if (str === null || str === undefined) return '';
-  return String(str)
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;');
-}
-
-// ════════════════════════════════════════════════════════════
-//  EVENT LISTENERS
-// ════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
+  // Nav
+  document.getElementById('navSessions').addEventListener('click', () => showView('sessions'));
+  document.getElementById('navStudents').addEventListener('click', () => showView('students'));
 
-  // Sessions sidebar
-  document.getElementById('newSessionBtn').addEventListener('click', openNewSessionModal);
-  document.getElementById('emptyNewBtn').addEventListener('click', openNewSessionModal);
-  document.getElementById('refreshSessionsBtn').addEventListener('click', loadSessions);
+  // Session detail
+  document.getElementById('dActivate').addEventListener('click', () => setStatus('active'));
+  document.getElementById('dClose').addEventListener('click', () => setStatus('closed'));
+  document.getElementById('dDelete').addEventListener('click', deleteSession);
 
-  // Session actions
-  document.getElementById('activateBtn').addEventListener('click', () => setSessionStatus('active'));
-  document.getElementById('closeBtn').addEventListener('click', () => setSessionStatus('closed'));
-  document.getElementById('deleteSessionBtn').addEventListener('click', deleteCurrentSession);
-
-  // New session modal
-  document.getElementById('createSessionBtn').addEventListener('click', createSession);
-  document.getElementById('cancelModalBtn').addEventListener('click', closeNewSessionModal);
-  document.getElementById('closeModalBtn').addEventListener('click', closeNewSessionModal);
-  document.getElementById('newSessionModal').addEventListener('click', e => {
-    if (e.target === document.getElementById('newSessionModal')) closeNewSessionModal();
+  // Session detail tabs
+  document.querySelectorAll('#view-session-detail .tab').forEach(t => {
+    t.addEventListener('click', () => switchDetailTab(t.dataset.tab));
   });
 
-  // Tabs
-  document.querySelectorAll('.tab').forEach(t => {
-    t.addEventListener('click', () => switchTab(t.dataset.tab));
+  // Modal
+  document.getElementById('modalBackdrop').addEventListener('click', e => {
+    if (e.target === document.getElementById('modalBackdrop')) closeModal();
   });
 
-  // Students
-  document.getElementById('uploadCsvBtn').addEventListener('click', toggleCsvPanel);
-  document.getElementById('addOneBtn').addEventListener('click', toggleAddOne);
-  document.getElementById('deleteAllStudentsBtn').addEventListener('click', deleteAllStudents);
-  document.getElementById('closeCsvPanel').addEventListener('click', closeCsvPanel);
-  document.getElementById('confirmUploadBtn').addEventListener('click', confirmUpload);
-  document.getElementById('cancelUploadBtn').addEventListener('click', closeCsvPanel);
-  document.getElementById('saveOneBtn').addEventListener('click', saveOne);
-  document.getElementById('cancelOneBtn').addEventListener('click', () => document.getElementById('addOnePanel').classList.add('hidden'));
+  // CSV
+  const inp = document.getElementById('csvInput');
+  inp.addEventListener('change', () => handleFile(inp.files[0]));
+  const dz = document.getElementById('dropZone');
+  dz.addEventListener('click', () => inp.click());
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+  dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('over'); handleFile(e.dataTransfer.files[0]); });
 
-  // CSV file input
-  const fileInput = document.getElementById('csvFileInput');
-  fileInput.addEventListener('change', () => handleCsvFile(fileInput.files[0]));
-
-  // Drag and drop
-  const dropZone = document.getElementById('csvDropZone');
-  dropZone.addEventListener('click', () => fileInput.click());
-  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-  dropZone.addEventListener('drop', e => {
-    e.preventDefault();
-    dropZone.classList.remove('drag-over');
-    handleCsvFile(e.dataTransfer.files[0]);
-  });
-
-  init();
+  // Boot
+  checkServer();
+  setInterval(checkServer, 15000);
+  showView('sessions');
 });
