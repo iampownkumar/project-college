@@ -10,6 +10,8 @@
 //              runner script dependency. On Windows (production) uses
 //              the bundled python.exe. On macOS/Linux (dev) uses
 //              system python3 as a fallback.
+//              When a sandbox directory is provided the process CWD is
+//              set to it so student code can open files by name only.
 // ============================================================
 
 import 'dart:io';
@@ -168,9 +170,14 @@ class PythonRunnerService {
 
   /// Writes [sourceCode] + embedded wrapper to temp files, runs them,
   /// and returns a [RunnerResult]. No external runner script needed.
+  ///
+  /// If [sandboxPath] is provided, the Python process will use that
+  /// directory as its working directory — student code can then open
+  /// sandbox files by filename alone (e.g. open('data.csv')).
   Future<RunnerResult> run({
     required String sourceCode,
     String? stdin,
+    String? sandboxPath,
   }) async {
     // Use the app's cache directory — always exists and is writable.
     final cacheDir = await getApplicationCacheDirectory();
@@ -196,6 +203,8 @@ class PythonRunnerService {
         stdoutEncoding: utf8,
         stderrEncoding: utf8,
         runInShell: false,
+        // Set CWD to sandbox dir so student code can open files by name.
+        workingDirectory: sandboxPath,
       ).timeout(
         Duration(seconds: timeout + 5),
         onTimeout: () =>
@@ -241,7 +250,12 @@ class PythonRunnerService {
 
   /// Spawns an interactive, unbuffered Python process.
   /// The caller is responsible for listening to stdout/stderr and writing to stdin.
-  Future<Process> startInteractive({required String sourceCode}) async {
+  ///
+  /// If [sandboxPath] is provided, the process CWD is set to it.
+  Future<Process> startInteractive({
+    required String sourceCode,
+    String? sandboxPath,
+  }) async {
     final cacheDir = await getApplicationCacheDirectory();
     final sourceFile = File(
         '${cacheDir.path}/student_interactive_${DateTime.now().millisecondsSinceEpoch}.py');
@@ -253,6 +267,7 @@ class PythonRunnerService {
     final process = await Process.start(
       executable,
       ['-u', sourceFile.path],
+      workingDirectory: sandboxPath,
     );
 
     // Clean up file when process exits

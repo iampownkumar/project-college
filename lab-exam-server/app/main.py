@@ -3,7 +3,7 @@
 # Project: Local Lab Exam System - Coordinator Server
 # Author: Pownkumar A (Founder of Koreliurm)
 # Created: 2026-05-15
-# Last Updated: 2026-05-15
+# Last Updated: 2026-05-26
 # Changelog: Added admin API router registration
 # Location: Tamil Nadu, India
 # Description: FastAPI application factory.
@@ -28,6 +28,7 @@ from app.core.database import engine
 import app.models  # noqa: F401
 from app.models.department import Department
 from app.db.base import Base
+from app.services.file_service import ensure_uploads_root
 
 # Import route modules
 from app.api.routes import health, auth, sessions, questions, heartbeat, run_logs, submissions, admin
@@ -49,6 +50,10 @@ async def lifespan(app: FastAPI):
     # Create all database tables if they do not exist
     Base.metadata.create_all(bind=engine)
     logger.info("Database tables verified / created.")
+
+    # Ensure the file upload directory exists
+    ensure_uploads_root()
+
     logger.info(
         f"Lab Exam Server v{settings.app_version} starting on "
         f"{settings.host}:{settings.port}"

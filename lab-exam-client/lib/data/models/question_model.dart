@@ -3,13 +3,14 @@
 // Project: Lab Exam Client - Koreliurm Labs
 // Author: Pownkumar A (Founder of Koreliurm)
 // Created: 2026-05-15
-// Last Updated: 2026-05-15
+// Last Updated: 2026-05-26
 // Location: Tamil Nadu, India
 // Description: Dart model mapping GET /question/assigned/{reg_no} response.
 //              Decodes visible_examples_json and constraints_json strings.
 // ============================================================
 
 import 'dart:convert';
+import 'attached_file_model.dart';
 
 class ExampleItem {
   final String input;
@@ -31,6 +32,8 @@ class QuestionModel {
   final List<ExampleItem> visibleExamples;
   final List<String> constraints;
   final DateTime? createdAt;
+  /// Files attached by faculty — empty when none are attached.
+  final List<AttachedFile> attachedFiles;
 
   const QuestionModel({
     required this.id,
@@ -42,6 +45,7 @@ class QuestionModel {
     required this.visibleExamples,
     required this.constraints,
     this.createdAt,
+    this.attachedFiles = const [],
   });
 
   factory QuestionModel.fromJson(Map<String, dynamic> j) {
@@ -67,6 +71,9 @@ class QuestionModel {
       visibleExamples: examples,
       constraints: constraints,
       createdAt: j['created_at'] != null ? DateTime.tryParse(j['created_at'] as String) : null,
+      attachedFiles: (j['attached_files'] as List<dynamic>? ?? [])
+          .map((f) => AttachedFile.fromJson(f as Map<String, dynamic>))
+          .toList(),
     );
   }
 }

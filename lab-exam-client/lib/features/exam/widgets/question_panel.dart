@@ -5,16 +5,21 @@
 // Created: 2026-05-15
 // Last Updated: 2026-05-26
 // Location: Tamil Nadu, India
-// Description: Left panel showing the full question statement,
-//              constraints, and visible I/O examples. Displays a
-//              loading spinner while the question is fetched and an
-//              error state if fetch fails.
+// Description: Left panel with two tabs:
+//
+//   [📋 Question] — full problem statement, constraints, examples.
+//   [📁 Files (N)] — sandbox files panel (FilesPanel widget).
+//                   Hidden when the question has no attached files.
+//
+//  Tab bar uses DefaultTabController so no StatefulWidget is needed
+//  at this level. FilesPanel is its own stateful widget.
 // ============================================================
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../exam_provider.dart';
 import '../../../data/models/question_model.dart';
+import 'files_panel.dart';
 
 class QuestionPanel extends StatelessWidget {
   const QuestionPanel({super.key});
@@ -44,8 +49,67 @@ class QuestionPanel extends StatelessWidget {
       );
     }
 
+    final hasFiles = q.attachedFiles.isNotEmpty;
+    final tabCount = hasFiles ? 2 : 1;
+
+    return DefaultTabController(
+      length: tabCount,
+      child: Column(
+        children: [
+          // ── Tab bar ─────────────────────────────────────────
+          Container(
+            color: theme.cardColor,
+            child: TabBar(
+              isScrollable: false,
+              labelStyle: theme.textTheme.labelMedium
+                  ?.copyWith(fontWeight: FontWeight.w700),
+              unselectedLabelStyle: theme.textTheme.labelMedium,
+              indicatorColor: theme.colorScheme.primary,
+              tabs: [
+                const Tab(
+                  icon: Icon(Icons.description_outlined, size: 16),
+                  text: 'Question',
+                  iconMargin: EdgeInsets.only(bottom: 2),
+                ),
+                if (hasFiles)
+                  Tab(
+                    icon: const Icon(Icons.folder_outlined, size: 16),
+                    text: 'Files (${q.attachedFiles.length})',
+                    iconMargin: const EdgeInsets.only(bottom: 2),
+                  ),
+              ],
+            ),
+          ),
+
+          // ── Tab views ────────────────────────────────────────
+          Expanded(
+            child: TabBarView(
+              children: [
+                // Tab 0 — question body
+                _QuestionBody(q: q),
+
+                // Tab 1 — sandbox files (only when hasFiles)
+                if (hasFiles) const FilesPanel(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Question body (extracted from old QuestionPanel) ──────────────────────
+
+class _QuestionBody extends StatelessWidget {
+  final QuestionModel q;
+  const _QuestionBody({required this.q});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
-      color: Theme.of(context).cardColor,
+      color: theme.cardColor,
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -178,8 +242,8 @@ class _ExampleBlock extends StatelessWidget {
           if (example.input.isNotEmpty) ...[
             Text(
               'Input:',
-              style:
-                  theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600),
+              style: theme.textTheme.labelSmall
+                  ?.copyWith(fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 2),
             Text(example.input,
@@ -188,12 +252,13 @@ class _ExampleBlock extends StatelessWidget {
           ],
           Text(
             'Output:',
-            style:
-                theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600),
+            style: theme.textTheme.labelSmall
+                ?.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 2),
           Text(example.output,
-              style: const TextStyle(fontFamily: 'monospace', fontSize: 13)),
+              style:
+                  const TextStyle(fontFamily: 'monospace', fontSize: 13)),
         ],
       ),
     );

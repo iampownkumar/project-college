@@ -8,6 +8,7 @@
 // Description: Central ChangeNotifier for the exam workspace.
 //              Manages question fetch, countdown timer, heartbeat,
 //              autosave, local code execution, run log, and submission.
+//              Sandbox file download is handled via SandboxService.
 //              ExamStatus is split into testRunning / consoleRunning
 //              to eliminate dual-purpose ambiguity.
 // ============================================================
@@ -25,6 +26,7 @@ import '../../data/models/test_case_result.dart';
 import '../../data/services/api_service.dart';
 import '../../data/services/python_runner_service.dart';
 import '../../data/services/autosave_service.dart';
+import '../../data/services/sandbox_service.dart';
 import '../../core/utils/machine_info.dart';
 
 enum ExamStatus {
@@ -49,6 +51,7 @@ class ExamProvider extends ChangeNotifier {
   final ApiService _api;
   final PythonRunnerService _runner;
   final AutosaveService _autosave;
+  final SandboxService _sandbox;
 
   final StudentModel student;
   final SessionModel session;
@@ -62,13 +65,15 @@ class ExamProvider extends ChangeNotifier {
     ApiService? api,
     PythonRunnerService? runner,
     AutosaveService? autosave,
+    SandboxService? sandbox,
   })  : _api = api ?? ApiService(),
         _runner = runner ?? PythonRunnerService(),
         _autosave = autosave ??
             AutosaveService(
               intervalSeconds:
                   ConfigLoader.instance.exam.autosaveIntervalSeconds,
-            );
+            ),
+        _sandbox = sandbox ?? SandboxService(api ?? ApiService());
 
   /// Called when the server reports that the session has been closed/expired.
   /// Wire this to Navigator.pop → login in ExamScreen.
@@ -144,6 +149,10 @@ class ExamProvider extends ChangeNotifier {
   DateTime? get lastSavedAt => _lastSavedAt;
   String get stdinInput => _stdinInput;
 
+  /// Path to the local sandbox directory for the current question.
+  /// Null until sandbox files are downloaded in [initialize].
+  String? get sandboxPath => _sandbox.sandboxPath;
+
   void setStdin(String val) {
     // Convert literal \n typed by the user in the single-line field into an actual newline
     _stdinInput = val.replaceAll('\\n', '\n');
@@ -175,7 +184,10 @@ class ExamProvider extends ChangeNotifier {
 
     try {
       _interactiveProcess =
-          await _runner.startInteractive(sourceCode: _currentCode);
+          await _runner.startInteractive(
+            sourceCode: _currentCode,
+            sandboxPath: _sandbox.sandboxPath,
+          );
 
       _interactiveProcess!.stdout.transform(utf8.decoder).listen((data) {
         _consoleLines.add(data);
@@ -230,6 +242,13 @@ class ExamProvider extends ChangeNotifier {
           await _api.fetchAssignedQuestion(student.registrationNumber);
       _question = QuestionModel.fromJson(json);
 
+      // Download sandbox files (if any) — runs in background after status → ready
+      if (_question!.attachedFiles.isNotEmpty) {
+        // Don't await here: let the question render immediately,
+        // sandbox downloads in background and notifies when done.
+        _downloadSandboxFiles();
+      }
+
       // Try to restore autosaved code
       final savedCode = await _autosave.loadSaved(_autosaveKey);
       _currentCode = savedCode ?? _question!.starterCode ?? '';
@@ -250,6 +269,23 @@ class ExamProvider extends ChangeNotifier {
       _status = ExamStatus.error;
       _error = e.toString();
       notifyListeners();
+    }
+  }
+
+  /// Download question sandbox files in the background.
+  /// Updates listeners once done so the Files tab can show the ready state.
+  Future<void> _downloadSandboxFiles() async {
+    try {
+      await _sandbox.downloadFiles(
+        questionId: _question!.id,
+        sessionId: session.id,
+        files: _question!.attachedFiles,
+      );
+      if (!_disposed) notifyListeners(); // Files tab re-renders with sandboxPath
+    } catch (e) {
+      // Non-fatal: sandbox failure doesn't crash the exam.
+      // The Files tab will show a warning instead.
+      debugPrint('SandboxService: failed to download files — $e');
     }
   }
 
@@ -455,6 +491,7 @@ class ExamProvider extends ChangeNotifier {
       final result = await _runner.run(
         sourceCode: _currentCode,
         stdin: _stdinInput.isEmpty ? null : _stdinInput,
+        sandboxPath: _sandbox.sandboxPath,
       );
 
       _lastResult = result;
@@ -500,6 +537,7 @@ class ExamProvider extends ChangeNotifier {
         final r = await _runner.run(
           sourceCode: _currentCode,
           stdin: ex.input.isEmpty ? null : ex.input,
+          sandboxPath: _sandbox.sandboxPath,
         );
         final actual = r.stdout.trimRight();
         final expected = ex.output.trimRight();

@@ -3,7 +3,7 @@
 # Project: Local Lab Exam System - Coordinator Server
 # Author: Pownkumar A (Founder of Koreliurm)
 # Created: 2026-05-15
-# Last Updated: 2026-05-15
+# Last Updated: 2026-05-26
 # Location: Tamil Nadu, India
 # Description: SQLAlchemy ORM model for Question.
 #              Stores programming problem statements and metadata.
@@ -44,6 +44,12 @@ class Question(Base):
     )
     submissions = relationship(
         "Submission", back_populates="question", cascade="all, delete-orphan"
+    )
+    files = relationship(
+        "QuestionFile",
+        back_populates="question",
+        cascade="all, delete-orphan",
+        order_by="QuestionFile.filename",
     )
 
     def __repr__(self) -> str:

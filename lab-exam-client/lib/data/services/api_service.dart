@@ -3,10 +3,11 @@
 // Project: Lab Exam Client - Koreliurm Labs
 // Author: Pownkumar A (Founder of Koreliurm)
 // Created: 2026-05-15
-// Last Updated: 2026-05-15
+// Last Updated: 2026-05-26
 // Location: Tamil Nadu, India
 // Description: Central HTTP client wrapping all server API calls
-//              (health, login, question, heartbeat, run-log, submission).
+//              (health, login, question, sandbox file download,
+//               heartbeat, run-log, submission).
 // ============================================================
 
 import 'dart:convert';
@@ -105,6 +106,30 @@ class ApiService {
       rethrow;
     } catch (e) {
       throw ApiException('Submission error: $e');
+    }
+  }
+
+  /// Download the raw bytes of a sandbox file attached to a question.
+  /// Called by [SandboxService] once per file on question load.
+  Future<List<int>> downloadSandboxFile({
+    required int questionId,
+    required String filename,
+  }) async {
+    try {
+      final r = await http
+          .get(_uri('/question/$questionId/files/$filename'))
+          .timeout(const Duration(seconds: 30));
+      if (r.statusCode >= 200 && r.statusCode < 300) {
+        return r.bodyBytes;
+      }
+      throw ApiException(
+        'File download failed ($filename): HTTP ${r.statusCode}',
+        statusCode: r.statusCode,
+      );
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      throw ApiException('File download error: $e');
     }
   }
 }

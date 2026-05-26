@@ -3,7 +3,7 @@
 # Project: Local Lab Exam System - Coordinator Server
 # Author: Pownkumar A (Founder of Koreliurm)
 # Created: 2026-05-15
-# Last Updated: 2026-05-15
+# Last Updated: 2026-05-26
 # Changelog: Phase 4 — all routes protected by X-Admin-Key header
 # Location: Tamil Nadu, India
 # Description: Admin/faculty API routes.
@@ -17,6 +17,10 @@
 #   Questions:
 #     POST   /api/v1/admin/question
 #     GET    /api/v1/admin/session/{id}/questions
+#     DELETE /api/v1/admin/question/{id}
+#     POST   /api/v1/admin/question/{id}/files        — upload sandbox file
+#     DELETE /api/v1/admin/question/{id}/files/{name} — remove sandbox file
+#     GET    /api/v1/admin/question/{id}/files        — list sandbox files
 #
 #   Students:
 #     POST   /api/v1/admin/student
@@ -38,14 +42,16 @@
 #     GET    /api/v1/admin/session/{id}/submissions
 # ============================================================
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List
 
 from app.core.database import get_db
 from app.core.security import verify_admin_key
 from app.services.admin_service import AdminService
+from app.services.file_service import FileService
 from app.schemas.common import SuccessResponse, ErrorResponse
+from app.schemas.question import AttachedFileOut
 from app.schemas.admin import (
     SessionCreateRequest,
     SessionStatusUpdateRequest,
@@ -260,6 +266,61 @@ def delete_question(
         return service.delete_question(question_id)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+# ── Question Sandbox Files ────────────────────────────────────
+
+@router.post(
+    "/question/{question_id}/files",
+    response_model=AttachedFileOut,
+    summary="Upload a sandbox file to a question",
+    description=(
+        "Attach a file (CSV, image, JSON, etc.) to a question so students "
+        "can access it inside the exam client without alt-tabbing. "
+        f"Max 5 files per question, 10 MB each."
+    ),
+)
+async def upload_question_file(
+    question_id: int,
+    file: UploadFile = File(..., description="File to attach to the question"),
+    db: Session = Depends(get_db),
+) -> AttachedFileOut:
+    """POST /api/v1/admin/question/{question_id}/files"""
+    service = FileService(db)
+    record = await service.upload_file(question_id, file)
+    return AttachedFileOut.model_validate(record)
+
+
+@router.delete(
+    "/question/{question_id}/files/{filename}",
+    response_model=SuccessResponse,
+    summary="Remove a sandbox file from a question",
+    description="Delete a file from both disk and the database.",
+)
+def delete_question_file(
+    question_id: int,
+    filename: str,
+    db: Session = Depends(get_db),
+) -> SuccessResponse:
+    """DELETE /api/v1/admin/question/{question_id}/files/{filename}"""
+    service = FileService(db)
+    result = service.delete_file(question_id, filename)
+    return SuccessResponse(message=result["message"])
+
+
+@router.get(
+    "/question/{question_id}/files",
+    response_model=List[AttachedFileOut],
+    summary="List sandbox files for a question (admin view)",
+    description="Return all files attached to a question, sorted by filename.",
+)
+def list_question_files_admin(
+    question_id: int,
+    db: Session = Depends(get_db),
+) -> List[AttachedFileOut]:
+    """GET /api/v1/admin/question/{question_id}/files"""
+    service = FileService(db)
+    return service.list_files(question_id)
 
 
 # ── Students ──────────────────────────────────────────────────

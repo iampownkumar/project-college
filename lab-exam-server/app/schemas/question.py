@@ -3,16 +3,27 @@
 # Project: Local Lab Exam System - Coordinator Server
 # Author: Pownkumar A (Founder of Koreliurm)
 # Created: 2026-05-15
-# Last Updated: 2026-05-15
+# Last Updated: 2026-05-26
 # Location: Tamil Nadu, India
 # Description: Pydantic schemas for question data including
-#              JSON-encoded examples and constraints.
+#              JSON-encoded examples, constraints, and attached
+#              sandbox files (AttachedFileOut).
 # ============================================================
 
 from pydantic import BaseModel
 from typing import Optional, List, Any
 from datetime import datetime
 import json
+
+
+class AttachedFileOut(BaseModel):
+    """Metadata for one file attached to a question (no file bytes)."""
+    id: int
+    filename: str
+    mime_type: str
+    size_bytes: int
+
+    model_config = {"from_attributes": True}
 
 
 class ExampleItem(BaseModel):
@@ -53,6 +64,8 @@ class QuestionOut(BaseModel):
     test_cases_json: Optional[str] = None
     metadata_json: Optional[str] = None
     created_at: Optional[datetime] = None
+    # Sandbox files attached by faculty — empty list when none exist
+    attached_files: List[AttachedFileOut] = []
 
     model_config = {"from_attributes": True}
 
