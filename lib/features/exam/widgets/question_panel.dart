@@ -3,10 +3,12 @@
 // Project: Lab Exam Client - Koreliurm Labs
 // Author: Pownkumar A (Founder of Koreliurm)
 // Created: 2026-05-15
-// Last Updated: 2026-05-15
+// Last Updated: 2026-05-26
 // Location: Tamil Nadu, India
 // Description: Left panel showing the full question statement,
-//              constraints, and visible I/O examples.
+//              constraints, and visible I/O examples. Displays a
+//              loading spinner while the question is fetched and an
+//              error state if fetch fails.
 // ============================================================
 
 import 'package:flutter/material.dart';
@@ -32,9 +34,11 @@ class QuestionPanel extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.error_outline, color: theme.colorScheme.error, size: 36),
+            Icon(Icons.error_outline,
+                color: theme.colorScheme.error, size: 36),
             const SizedBox(height: 12),
-            Text(exam.error, style: TextStyle(color: theme.colorScheme.error)),
+            Text(exam.error,
+                style: TextStyle(color: theme.colorScheme.error)),
           ],
         ),
       );
@@ -48,32 +52,42 @@ class QuestionPanel extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Title
-            Text(q.title,
-                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+            Text(
+              q.title,
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w700),
+            ),
             const SizedBox(height: 6),
 
             // Language badge
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.12),
+                color: theme.colorScheme.primary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Text(q.language.toUpperCase(),
-                  style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: theme.colorScheme.primary)),
+              child: Text(
+                q.language.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.primary,
+                ),
+              ),
             ),
 
             const SizedBox(height: 16),
             const Divider(),
             const SizedBox(height: 16),
 
-            // Statement
+            // Problem statement
             _SectionLabel('Problem Statement'),
             const SizedBox(height: 8),
-            Text(q.statement, style: theme.textTheme.bodyMedium?.copyWith(height: 1.7)),
+            Text(
+              q.statement,
+              style: theme.textTheme.bodyMedium?.copyWith(height: 1.7),
+            ),
 
             // Constraints
             if (q.constraints.isNotEmpty) ...[
@@ -86,7 +100,13 @@ class QuestionPanel extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text('• ', style: TextStyle(fontSize: 14)),
-                        Expanded(child: Text(c, style: theme.textTheme.bodySmall?.copyWith(height: 1.5))),
+                        Expanded(
+                          child: Text(
+                            c,
+                            style: theme.textTheme.bodySmall
+                                ?.copyWith(height: 1.5),
+                          ),
+                        ),
                       ],
                     ),
                   )),
@@ -141,24 +161,36 @@ class _ExampleBlock extends StatelessWidget {
         color: bg,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-            color: theme.colorScheme.onSurface.withOpacity(0.08)),
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.08),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Example $index',
-              style: theme.textTheme.labelSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: theme.colorScheme.onSurface.withOpacity(0.5))),
+          Text(
+            'Example $index',
+            style: theme.textTheme.labelSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+            ),
+          ),
           const SizedBox(height: 8),
           if (example.input.isNotEmpty) ...[
-            Text('Input:', style: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600)),
+            Text(
+              'Input:',
+              style:
+                  theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600),
+            ),
             const SizedBox(height: 2),
             Text(example.input,
                 style: const TextStyle(fontFamily: 'monospace', fontSize: 13)),
             const SizedBox(height: 6),
           ],
-          Text('Output:', style: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600)),
+          Text(
+            'Output:',
+            style:
+                theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600),
+          ),
           const SizedBox(height: 2),
           Text(example.output,
               style: const TextStyle(fontFamily: 'monospace', fontSize: 13)),

@@ -1,9 +1,17 @@
-# Lab Exam Client - Bundled Python Requirements
-# These packages are mandatory for student questions.
-# Install into the bundled Python environment:
-#   python.exe -m pip install -r requirements.txt --no-index --find-links ./wheels
+# ============================================================
+# Lab Exam Client - Koreliurm Labs
+# Bundled Python Environment Requirements
+#
+# These packages are pre-installed in runtime/venv/ so students
+# can use them in any exam question without any manual setup.
+#
+# Install: run  runtime/setup_env.sh  once per machine.
+# ============================================================
 
-pandas==2.2.2
-numpy==1.26.4
-matplotlib==3.8.4
-seaborn==0.13.2
+# Core data science — use broad version ranges so pip picks
+# the right wheel for whatever Python version is on the machine
+numpy
+pandas
+matplotlib
+seaborn
+scipy

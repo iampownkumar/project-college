@@ -15,7 +15,7 @@ dependencies:
   http: ^1.2.1
 
   # Code Editor (full featured with syntax highlight + line numbers)
-  re_editor: ^0.3.0
+  re_editor: ^0.8.0
   re_highlight: ^0.0.3
 
   # Window management (fullscreen, title bar control)

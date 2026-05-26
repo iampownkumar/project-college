@@ -3,7 +3,7 @@
 // Project: Lab Exam Client - Koreliurm Labs
 // Author: Pownkumar A (Founder of Koreliurm)
 // Created: 2026-05-16
-// Last Updated: 2026-05-16
+// Last Updated: 2026-05-26
 // Location: Tamil Nadu, India
 // Description: Warning banner at the top of the exam screen.
 //              Shows timer warnings (30/10/5 min), alt-tab strike
@@ -13,6 +13,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../exam_provider.dart';
+import '../../../core/config/config_loader.dart';
 
 class TimerWarningBanner extends StatelessWidget {
   const TimerWarningBanner({super.key});
@@ -21,8 +22,9 @@ class TimerWarningBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final exam = context.watch<ExamProvider>();
 
-    // ── Locked banner (3 strikes hit) ────────────────────────
+    // ── Locked banner (max strikes hit) ────────────────────────
     if (exam.focusLocked) {
+      final max = ConfigLoader.instance.exam.maxStrikes;
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -32,9 +34,9 @@ class TimerWarningBanner extends StatelessWidget {
           children: [
             const Icon(Icons.lock_rounded, color: Colors.white, size: 16),
             const SizedBox(width: 10),
-            const Expanded(
+            Expanded(
               child: Text(
-                '🔒  EXAM LOCKED — You switched windows 3 times. Code auto-submitted.',
+                '🔒  EXAM LOCKED — You switched windows $max time${max == 1 ? '' : 's'}. Code auto-submitted.',
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w700,
@@ -153,7 +155,7 @@ class TimerWarningBanner extends StatelessWidget {
                       color: Colors.white, size: 13),
                   const SizedBox(width: 5),
                   Text(
-                    'Tab switches: $strikes / 3',
+                    'Tab switches: $strikes / ${ConfigLoader.instance.exam.maxStrikes}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,

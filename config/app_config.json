@@ -11,9 +11,16 @@
   "exam": {
     "autosave_interval_seconds": 15,
     "fullscreen": true,
-    "default_duration_minutes": 120
+    "default_duration_minutes": 120,
+    "max_strikes": 3
   },
   "client": {
     "version": "1.0.0"
+  },
+  "debug": {
+    "enabled": true,
+    "disable_focus_tracking": true,
+    "allow_copy_paste": true,
+    "force_system_python": true
   }
 }

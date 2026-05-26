@@ -3,7 +3,7 @@
 // Project: Lab Exam Client - Koreliurm Labs
 // Author: Pownkumar A (Founder of Koreliurm)
 // Created: 2026-05-15
-// Last Updated: 2026-05-15
+// Last Updated: 2026-05-26
 // Location: Tamil Nadu, India
 // Description: ChangeNotifier managing login state, server health
 //              check, and exposing student/session/assignment data.

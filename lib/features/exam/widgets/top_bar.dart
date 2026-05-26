@@ -3,16 +3,19 @@
 // Project: Lab Exam Client - Koreliurm Labs
 // Author: Pownkumar A (Founder of Koreliurm)
 // Created: 2026-05-15
-// Last Updated: 2026-05-15
+// Last Updated: 2026-05-26
 // Location: Tamil Nadu, India
 // Description: Exam top bar — student ID/name, countdown timer with
 //              colour coding, connectivity dot, autosave indicator,
-//              and dark/light theme toggle.
+//              and dark/light theme toggle. Uses TimeUtils for
+//              HH:MM:SS formatting and AppColors for consistent colours.
 // ============================================================
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../theme/theme_provider.dart';
+import '../../../app/theme_provider.dart';
+import '../../../core/constants/app_colors.dart';
+import '../../../core/utils/time_utils.dart';
 import '../exam_provider.dart';
 
 class ExamTopBar extends StatelessWidget implements PreferredSizeWidget {
@@ -28,48 +31,65 @@ class ExamTopBar extends StatelessWidget implements PreferredSizeWidget {
     final tp = context.watch<ThemeProvider>();
 
     final r = exam.remaining;
-    final hh = r.inHours.toString().padLeft(2, '0');
-    final mm = (r.inMinutes % 60).toString().padLeft(2, '0');
-    final ss = (r.inSeconds % 60).toString().padLeft(2, '0');
-    final timerStr = '$hh:$mm:$ss';
+    final timerStr = TimeUtils.formatCountdown(r);
     final timerColor = r.inMinutes < 10
-        ? const Color(0xFFEF4444)
+        ? AppColors.danger
         : r.inMinutes < 30
-            ? const Color(0xFFF59E0B)
-            : const Color(0xFF10B981);
+            ? AppColors.warning
+            : AppColors.success;
 
     return AppBar(
       automaticallyImplyLeading: false,
       title: Row(
         children: [
-          // Brand
+          // Brand badge
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
               color: theme.colorScheme.primary,
               borderRadius: BorderRadius.circular(6),
             ),
-            child: const Text('Koreliurm',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+            child: const Text(
+              'Koreliurm',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+              ),
+            ),
           ),
           const SizedBox(width: 10),
 
-          // Student ID
-          Text(exam.student.registrationNumber,
-              style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
-          Text(' · ${exam.student.name}',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withOpacity(0.55),
-              )),
+          // Student info
+          Text(
+            exam.student.registrationNumber,
+            style: theme.textTheme.bodyMedium
+                ?.copyWith(fontWeight: FontWeight.w600),
+          ),
+          Text(
+            ' · ${exam.student.name} (${exam.student.department}, ${exam.student.year} Year, Sec ${exam.student.section})',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+            ),
+          ),
 
           const Spacer(),
 
           // Autosave status
           if (exam.lastSavedAt != null)
             Row(children: [
-              Icon(Icons.save_outlined, size: 13, color: theme.colorScheme.onSurface.withOpacity(0.4)),
+              Icon(Icons.save_outlined,
+                  size: 13,
+                  color:
+                      theme.colorScheme.onSurface.withValues(alpha: 0.4)),
               const SizedBox(width: 4),
-              Text('Saved', style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurface.withOpacity(0.4))),
+              Text(
+                'Saved',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                ),
+              ),
               const SizedBox(width: 16),
             ]),
 
@@ -79,29 +99,36 @@ class ExamTopBar extends StatelessWidget implements PreferredSizeWidget {
 
           // Timer
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             decoration: BoxDecoration(
-              color: timerColor.withOpacity(0.12),
+              color: timerColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: timerColor.withOpacity(0.35)),
+              border: Border.all(
+                  color: timerColor.withValues(alpha: 0.35)),
             ),
             child: Row(children: [
               Icon(Icons.timer_outlined, size: 15, color: timerColor),
               const SizedBox(width: 6),
-              Text(timerStr,
-                  style: TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: timerColor,
-                  )),
+              Text(
+                timerStr,
+                style: TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: timerColor,
+                ),
+              ),
             ]),
           ),
           const SizedBox(width: 12),
 
           // Theme toggle
           IconButton(
-            icon: Icon(tp.isDark ? Icons.wb_sunny_outlined : Icons.nightlight_round, size: 18),
+            icon: Icon(
+              tp.isDark ? Icons.wb_sunny_outlined : Icons.nightlight_round,
+              size: 18,
+            ),
             tooltip: tp.isDark ? 'Light Mode' : 'Dark Mode',
             onPressed: tp.toggle,
           ),
@@ -117,12 +144,19 @@ class _ConnDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = online ? const Color(0xFF10B981) : const Color(0xFFEF4444);
+    final color = online ? AppColors.success : AppColors.danger;
     return Row(children: [
-      Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+      Container(
+        width: 8,
+        height: 8,
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      ),
       const SizedBox(width: 4),
-      Text(online ? 'Online' : 'Offline',
-          style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
+      Text(
+        online ? 'Online' : 'Offline',
+        style: TextStyle(
+            fontSize: 11, color: color, fontWeight: FontWeight.w600),
+      ),
     ]);
   }
 }

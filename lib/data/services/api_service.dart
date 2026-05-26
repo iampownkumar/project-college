@@ -73,14 +73,18 @@ class ApiService {
     }
   }
 
-  Future<void> postHeartbeat(Map<String, dynamic> payload) async {
+  Future<Map<String, dynamic>?> postHeartbeat(Map<String, dynamic> payload) async {
     try {
-      await http
+      final r = await http
           .post(_uri(ApiConstants.heartbeat), headers: _headers, body: jsonEncode(payload))
           .timeout(const Duration(seconds: 5));
+      if (r.statusCode >= 200 && r.statusCode < 300) {
+        return jsonDecode(r.body) as Map<String, dynamic>;
+      }
     } catch (_) {
       // Heartbeat failures are silent — connectivity badge handles UI.
     }
+    return null;
   }
 
   Future<void> postRunLog(Map<String, dynamic> payload) async {
